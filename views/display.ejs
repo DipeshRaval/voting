@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manage Election</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body>
+    <div class="grid grid-cols-6">
+      <div class="col-span-2 col-start-3">
+        <h1 class="text-2xl mt-5 mb-2 text-green-600">
+          Manage <%= election.title %>
+        </h1>
+
+        <h2 class="text-xl mt-5 mb-2">Create a Quetions</h2>
+
+        <form
+          action="/addquetion/<%= election.id %>"
+          method="post"
+          class="mb-3"
+        >
+          <div>
+            <div class="mb-2">
+              <label for="name">Quetion Title :</label>
+              <input
+                type="text"
+                id="name"
+                name="title"
+                placeholder="Title......"
+                class="rounded border-2 border-gray-900 my-1 w-full p-2 text-sm"
+              />
+            </div>
+            <div class="mb-2">
+              <label for="desc" class="mb-1">Quetion Description :</label>
+              <textarea
+                name="desc"
+                id="desc"
+                placeholder="Description...."
+                class="rounded border-2 border-gray-900 my-1 w-full p-2 text-sm leading-4"
+                cols="30"
+                rows="3"
+              ></textarea>
+            </div>
+            <div class="">
+              <input
+                type="submit"
+                value="Add Quetion"
+                class="text-white bg-green-600 px-5 rounded py-2 font-medium mr-2 my-1 mb-2"
+              />
+            </div>
+          </div>
+        </form>
+
+        <h2>Manage Quetions</h2>
+        <ol class="list-decimal">
+          <% for(let i = 0; i < que.length; i++) { %>
+          <li class="ml-4 my-1">
+            <a href="/quetion/<%=que[i].id %>"><%= que[i].title %></a>
+          </li>
+          <% } %>
+        </ol>
+      </div>
+    </div>
+  </body>
+</html>

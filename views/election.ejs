@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Elections</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body>
+    <div class="grid grid-cols-6">
+      <div class="col-span-2 col-start-3">
+        <h2 class="text-xl mt-5 mb-2">Create a Election</h2>
+
+        <form action="/election" method="post" class="mb-3">
+          <div>
+            <div class="mb-2">
+              <label for="name">Election Name :</label>
+              <input
+                type="text"
+                id="name"
+                name="title"
+                placeholder="Name of Election"
+                class="rounded border-2 border-gray-900 my-1 w-full p-2 text-sm"
+              />
+            </div>
+            <div class="mb-2">
+              <label for="url" class="mb-1">Election Url :</label>
+              <input
+                name="url"
+                id="url"
+                type="text"
+                placeholder="election url"
+                class="rounded border-2 border-gray-900 my-1 w-full p-2 text-sm leading-4"
+              />
+            </div>
+            <div class="">
+              <input
+                type="submit"
+                value="Create Election"
+                class="text-white bg-green-600 px-5 rounded py-2 font-medium mr-2 my-1 mb-2"
+              />
+            </div>
+          </div>
+        </form>
+
+        <h4 class="mt-2 text-xl">List of Elections</h4>
+        <ol class="list-decimal">
+          <% for(let i = 0; i < ele.length; i++) { %>
+          <li class="ml-4 my-1">
+            <a href="election/<%=ele[i].id %>"><%= ele[i].title %></a>
+          </li>
+          <% } %>
+        </ol>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Option</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body>
+    <div class="grid grid-cols-6">
+      <div class="col-span-2 col-start-3">
+        <div class="mt-6 mx-auto">
+          <a
+            href="/election/<%= election.id %>"
+            class="rounded text-white bg-black text-sm inline px-2 py-2"
+          >
+            <- Go to QuetionPage</a
+          >
+        </div>
+
+        <div class="mt-5 mb-3">
+          <div>
+            <h2 class="text-gray-700 text-xl">
+              <span class="text-gray-700 font-bold">Quetion :</span> <%=
+              quetion.title %> ?
+            </h2>
+          </div>
+          <div class="mt-2">
+            <h2 class="text-gray-700 text-md">
+              <span class="text-gray-700 font-bold">Description :</span>
+              <%= quetion.description %>
+            </h2>
+          </div>
+        </div>
+
+        <form
+          action="/election/<%= election.id %>/quetion/<%= quetion.id %>/addOptions"
+          method="post"
+          class="mt-5"
+        >
+          <input type="hidden" name="qid" value="<%= quetion.id %>" />
+
+          <div class="flex gap-2">
+            <div class="flex-auto">
+              <input
+                type="text"
+                name="name"
+                class="rounded border-2 border-gray-900 w-full p-2 text-sm"
+                placeholder="Enter a option"
+              />
+            </div>
+            <div class="flex-none">
+              <input
+                type="submit"
+                value="Add Option"
+                class="text-white bg-green-600 px-5 rounded py-2 font-medium mr-2 mb-2"
+              />
+            </div>
+          </div>
+        </form>
+
+        <% if(Options.length) { %>
+        <ol class="ml-5 mt-4 list-decimal">
+          <% for(let i=0;i< Options.length; i++){%>
+          <li>
+            <div>
+              <span><%= Options[i].optionName %></span>
+              <a href="" class="text-sm bg-blue-800 text-white px-2 py-1 ml-2"
+                >Edit Option</a
+              >
+              <a href="" class="text-sm bg-red-600 text-white px-2 py-1 ml-2"
+                >Delete Option</a
+              >
+            </div>
+          </li>
+          <% } %>
+        </ol>
+        <% } else { %>
+        <p class="text-red-700 my-2">No options added ! ! !</p>
+        <% } %>
+      </div>
+    </div>
+  </body>
+</html>
