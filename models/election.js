@@ -21,6 +21,25 @@ module.exports = (sequelize, DataTypes) => {
         url: url,
       });
     }
+
+    static updateElection({ id, title, url }) {
+      return this.update(
+        { title, url },
+        {
+          where: {
+            id,
+          },
+        }
+      );
+    }
+
+    static remove(id) {
+      this.destroy({
+        where: {
+          id,
+        },
+      });
+    }
   }
   Election.init(
     {

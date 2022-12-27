@@ -26,6 +26,25 @@ module.exports = (sequelize, DataTypes) => {
         electionID: electionID,
       });
     }
+
+    static updateQuetion({ id, title, description }) {
+      return this.update(
+        { title, description },
+        {
+          where: {
+            id,
+          },
+        }
+      );
+    }
+
+    static remove(id) {
+      this.destroy({
+        where: {
+          id,
+        },
+      });
+    }
   }
   Quetion.init(
     {

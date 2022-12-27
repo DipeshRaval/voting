@@ -10,7 +10,6 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
     }
-
     static getOptions(queid) {
       return this.findAll({
         where: {
@@ -26,10 +25,30 @@ module.exports = (sequelize, DataTypes) => {
         queid: queid,
       });
     }
+
+    static updateOption({ id, optionName }) {
+      return this.update(
+        { optionName },
+        {
+          where: {
+            id,
+          },
+        }
+      );
+    }
+
+    static remove(id) {
+      this.destroy({
+        where: {
+          id,
+        },
+      });
+    }
   }
   Option.init(
     {
       optionName: DataTypes.STRING,
+      queid: DataTypes.INTEGER,
     },
     {
       sequelize,

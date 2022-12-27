@@ -12,6 +12,9 @@ module.exports = {
       optionName: {
         type: Sequelize.STRING
       },
+      queid: {
+        type: Sequelize.INTEGER
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
