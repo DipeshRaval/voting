@@ -9,6 +9,9 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      Election.hasMany(models.Voter, {
+        foreignKey: "electionId",
+      });
     }
 
     static getElection() {

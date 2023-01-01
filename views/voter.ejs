@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="csrf-token" content="<%= csrfToken %>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Elections</title>
+    <title>Voters</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
@@ -13,13 +13,13 @@
       integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD"
       crossorigin="anonymous"
     />
-
     <script>
       const token = document
         .querySelector("meta[name='csrf-token']")
         .getAttribute("content");
-      const deleteElection = (id) => {
-        fetch(`/delElection/${id}`, {
+
+      const deleteVoter = (id) => {
+        fetch(`/delVoter/${id}`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
@@ -43,68 +43,79 @@
   <body>
     <div class="grid grid-cols-6">
       <div class="col-span-2 col-start-3">
-        <h2 class="text-xl mt-4 mb-2 font-semibold">Create a Election</h2>
+        <div class="mt-4 mx-auto">
+          <a
+            href="/election/<%= electionID %>"
+            class="rounded text-white bg-gray-500 text-sm inline px-2 py-2"
+          >
+            <- Go to QuetionPage</a
+          >
+        </div>
 
-        <form action="/election" method="post" class="mb-3">
+        <h1 class="mt-2 text-2xl text-green-800 text-center font-semibold">
+          Add Voters
+        </h1>
+
+        <form action="/election/<%= electionID %>/addvoter" method="post">
           <input type="hidden" name="_csrf" value="<%=csrfToken%>" />
           <div>
-            <div class="mb-2">
-              <label for="name">Election Name :</label>
-              <input
-                type="text"
-                id="name"
-                name="title"
-                placeholder="Name of Election"
-                class="rounded border-2 border-gray-900 my-1 w-full p-2 text-sm"
-              />
-            </div>
-            <div class="mb-2">
-              <label for="url" class="mb-1">Election Url :</label>
-              <input
-                name="url"
-                id="url"
-                type="text"
-                placeholder="election url"
-                class="rounded border-2 border-gray-900 my-1 w-full p-2 text-sm leading-4"
-              />
-            </div>
-            <div class="">
-              <input
-                type="submit"
-                value="Create Election"
-                class="text-white bg-green-600 px-3 rounded py-2 font-medium mr-2 my-1 mb-2"
-              />
-            </div>
+            <label for="vid" class="py-1 text-xl text-gray-900"
+              >Voter ID :</label
+            >
+            <input
+              type="text"
+              id="vid"
+              name="voterId"
+              required
+              class="w-full border-2 border-gray-800 rounded px-4 py-2 my-2 text-gray-900"
+            />
+          </div>
+          <div>
+            <label for="pwd" class="py-1 text-xl text-gray-900"
+              >Password :</label
+            >
+            <input
+              type="password"
+              id="pwd"
+              name="password"
+              required
+              class="w-full border-2 border-gray-600 rounded px-4 py-2 my-2 text-gray-900"
+            />
+          </div>
+          <div>
+            <input
+              type="submit"
+              value="Add Voter"
+              class="bg-green-600 text-white px-5 py-2 rounded my-1"
+            />
           </div>
         </form>
 
-        <h4 class="mt-2 text-xl font-semibold">
-          List of Elections (click on election)
-        </h4>
-        <ol class="list-decimal my-2">
-          <% for(let i = 0; i < ele.length; i++) { %>
-          <li class="ml-4">
-            <div class="mb-3">
-              <span>
-                <a href="election/<%=ele[i].id %>"><%= ele[i].title %></a>
-              </span>
+        <h2 class="text-xl mt-4 font-semibold">Voter List</h2>
+
+        <ul class="list-disc ml-5">
+          <% for(let i=0; i < voters.length; i++) {%>
+          <li class="my-3">
+            <div>
+              <span><%= voters[i].voterId %></span>
               <button
-                class="border-2 border-gray-900 text-sm bg-red-500 text-white px-2 py-1 ml-4"
-                onclick="deleteElection(<%=ele[i].id %>)"
+                class="rounded text-sm px-2 py-1 ml-2 text-red-800 underline"
+                onclick="deleteVoter(<%= voters[i].id %>)"
               >
-                Delete Election
+                Delete Voter
               </button>
+
               <button
                 type="button"
-                class="px-2 py-1 ml-2 text-sm bg-blue-400 border-2 border-gray-900"
+                class="rounded text-sm px-2 py-1 ml-2 text-blue-800 underline"
                 data-bs-toggle="modal"
-                data-bs-target="#exampleModal<%=ele[i].id %>"
+                data-bs-target="#exampleModal<%= voters[i].id %>"
               >
-                Edit Election
+                Edit Password
               </button>
               <div
                 class="modal fade"
-                id="exampleModal<%=ele[i].id %>"
+                id="exampleModal<%= voters[i].id %>"
                 tabindex="-1"
                 aria-labelledby="exampleModalLabel"
                 aria-hidden="true"
@@ -113,7 +124,7 @@
                   <div class="modal-content">
                     <div class="modal-header">
                       <h1 class="modal-title fs-5" id="exampleModalLabel">
-                        Modify Election
+                        Modify Voter
                       </h1>
                       <button
                         type="button"
@@ -123,28 +134,17 @@
                       ></button>
                     </div>
                     <div class="modal-body">
-                      <form action="/modify/election/<%= ele[i].id %>" method="post">
+                      <form action="/election/<%= electionID %>/modify/voter/<%= voters[i].id %>" method="post">
                         <input type="hidden" name="_csrf" value="<%=csrfToken%>" />
                         <div class="mb-3">
-                          <label for="recipient-name<%=ele[i].id %>" class="col-form-label"
-                            >Election Title :</label
+                          <label for="recipient-name" class="col-form-label"
+                            >Update Password :</label
                           >
                           <input
                             type="text"
                             class="form-control border-2 border-gray-900"
-                            id="recipient-name<%=ele[i].id %>"
-                            name="title"
-                          />
-                        </div>
-                        <div class="mb-3">
-                          <label for="message-text<%=ele[i].id %>" class="col-form-label"
-                            >Election Url :</label
-                          >
-                          <input
-                            type="text"
-                            class="form-control border-2 border-gray-900"
-                            id="message-text<%=ele[i].id %>"
-                            name="url"
+                            id="recipient-name"
+                            name="pwd"
                           />
                         </div>
                         <input
@@ -170,7 +170,7 @@
             </div>
           </li>
           <% } %>
-        </ol>
+        </ul>
       </div>
     </div>
 

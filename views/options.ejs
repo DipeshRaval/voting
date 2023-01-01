@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="csrf-token" content="<%= csrfToken %>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Option</title>
     <link
@@ -13,12 +14,18 @@
   />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+      const token = document
+        .querySelector("meta[name='csrf-token']")
+        .getAttribute("content");
       const deleteOption = (id) => {
         fetch(`/delOption/${id}`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({
+            _csrf: token,
+          }),
         })
           .then((res) => {
             if (res.ok) {
@@ -64,6 +71,7 @@
           method="post"
           class="mt-2"
         >
+          <input type="hidden" name="_csrf" value="<%=csrfToken%>" />
           <input type="hidden" name="qid" value="<%= quetion.id %>" />
 
           <div class="flex gap-2">
@@ -128,6 +136,7 @@
                     </div>
                     <div class="modal-body">
                       <form action="/election/<%= election.id %>/quetion/<%= quetion.id %>/modifyOptions/<%= Options[i].id %>" method="post">
+                        <input type="hidden" name="_csrf" value="<%=csrfToken%>" />
                         <div class="mb-3">
                           <label for="recipient-name<%= Options[i].id %>" class="col-form-label"
                             >Option :</label

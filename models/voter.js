@@ -1,7 +1,7 @@
 "use strict";
 const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
-  class Option extends Model {
+  class Voter extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -9,33 +9,30 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      Voter.belongsTo(models.Election, {
+        foreignKey: "electionId",
+      });
     }
-    static getOptions(queid) {
+
+    static getVoters(electionId) {
       return this.findAll({
         where: {
-          queid,
+          electionId,
         },
         order: [["id", "ASC"]],
       });
     }
 
-    static addOption({ optionName, queid }) {
-      console.log("id : ", queid);
+    static addVoter({ voterId, password, electionId }) {
       return this.create({
-        optionName: optionName,
-        queid: queid,
+        voterId,
+        password,
+        electionId,
       });
     }
 
-    static updateOption({ id, optionName }) {
-      return this.update(
-        { optionName },
-        {
-          where: {
-            id,
-          },
-        }
-      );
+    updateVoter(password) {
+      return this.update({ password: password });
     }
 
     static remove(id) {
@@ -46,15 +43,15 @@ module.exports = (sequelize, DataTypes) => {
       });
     }
   }
-  Option.init(
+  Voter.init(
     {
-      optionName: DataTypes.STRING,
-      queid: DataTypes.INTEGER,
+      voterId: DataTypes.STRING,
+      password: DataTypes.STRING,
     },
     {
       sequelize,
-      modelName: "Option",
+      modelName: "Voter",
     }
   );
-  return Option;
+  return Voter;
 };

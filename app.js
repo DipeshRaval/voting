@@ -1,8 +1,10 @@
 const express = require("express");
 const app = express();
 const path = require("path");
-const { Election, Quetion, Option } = require("./models");
+const { Election, Quetion, Option, Voter } = require("./models");
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
+const csrf = require("tiny-csrf");
 
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: false }));
@@ -10,10 +12,15 @@ app.set("view engine", "ejs");
 app.use(express.static(path.join(__dirname + "/public")));
 app.set("views", path.join(__dirname, "views"));
 
+// for csrf token
+app.use(cookieParser("Important string"));
+app.use(csrf("123456789iamasecret987654321look", ["POST", "PUT", "DELETE"]));
+
 app.get("/", async (req, res) => {
   const ele = await Election.getElection();
-  res.render("election", {
-    ele,
+  res.render("index", {
+    title: "Todo Application",
+    csrfToken: req.csrfToken(),
   });
 });
 
@@ -22,6 +29,7 @@ app.get("/listOfElection", async (req, res) => {
   const ele = await Election.getElection();
   res.render("election", {
     ele,
+    csrfToken: req.csrfToken(),
   });
 });
 
@@ -60,9 +68,12 @@ app.get("/election/:id", async (req, res) => {
   try {
     const election = await Election.findByPk(req.params.id);
     const que = await Quetion.getQuetions(req.params.id);
+    const voters = await Voter.getVoters(req.params.id);
     res.render("display", {
       election,
       que,
+      totalVoter: voters.length,
+      csrfToken: req.csrfToken(),
     });
   } catch (err) {
     console.log(err);
@@ -78,6 +89,7 @@ app.get("/election/:eId/quetion/:qId/addOptions", async (req, res) => {
     Options,
     quetion,
     election,
+    csrfToken: req.csrfToken(),
   });
 });
 
@@ -103,7 +115,7 @@ app.delete("/delElection/:id", async (req, res) => {
     res.send(affectedRow ? true : false);
   } catch (error) {
     console.log(error);
-    return response.status(422).json(error);
+    return res.status(422).json(error);
   }
 });
 
@@ -114,7 +126,7 @@ app.delete("/delQuetion/:id", async (req, res) => {
     res.send(affectedRow ? true : false);
   } catch (error) {
     console.log(error);
-    return response.status(422).json(error);
+    return res.status(422).json(error);
   }
 });
 
@@ -125,7 +137,7 @@ app.delete("/delOption/:id", async (req, res) => {
     res.send(affectedRow ? true : false);
   } catch (error) {
     console.log(error);
-    return response.status(422).json(error);
+    return res.status(422).json(error);
   }
 });
 
@@ -139,7 +151,7 @@ app.post("/modify/election/:id", async (req, res) => {
     res.redirect("/listOfElection");
   } catch (error) {
     console.log(error);
-    return response.status(422).json(error);
+    return res.status(422).json(error);
   }
 });
 
@@ -153,7 +165,7 @@ app.post("/modify/:eid/quetion/:id", async (req, res) => {
     res.redirect(`/election/${req.params.eid}`);
   } catch (error) {
     console.log(error);
-    return response.status(422).json(error);
+    return res.status(422).json(error);
   }
 });
 
@@ -168,8 +180,100 @@ app.post("/election/:eId/quetion/:qId/modifyOptions/:id", async (req, res) => {
     );
   } catch (error) {
     console.log(error);
-    return response.status(422).json(error);
+    return res.status(422).json(error);
   }
+});
+
+app.get("/election/:eid/preview", async (req, res) => {
+  try {
+    const election = await Election.findByPk(req.params.eid);
+    const quetions = await Quetion.getQuetions(req.params.eid);
+    const options = [];
+
+    for (let i = 0; i < quetions.length; i++) {
+      const op = await Option.getOptions(quetions[i].id);
+      options.push(op);
+    }
+
+    res.render("preview", {
+      election,
+      quetions,
+      options,
+      csrfToken: req.csrfToken(),
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(422).json(error);
+  }
+});
+
+app.get("/election/:eid/voter", async (req, res) => {
+  const voters = await Voter.getVoters(req.params.eid);
+  res.render("voter", {
+    electionID: req.params.eid,
+    voters,
+    csrfToken: req.csrfToken(),
+  });
+});
+
+app.post("/election/:eid/addvoter", async (req, res) => {
+  try {
+    await Voter.addVoter({
+      voterId: req.body.voterId,
+      password: req.body.password,
+      electionId: req.params.eid,
+    });
+
+    res.redirect(`/election/${req.params.eid}/voter`);
+  } catch (err) {
+    console.log(err);
+    return res.status(422).json(err);
+  }
+});
+
+app.delete("/delVoter/:id", async (req, res) => {
+  console.log("We are delete a Voter with ID: ", req.params.id);
+  try {
+    const affectedRow = await Voter.remove(req.params.id);
+    res.send(affectedRow ? true : false);
+  } catch (error) {
+    console.log(error);
+    return res.status(422).json(error);
+  }
+});
+
+app.post("/election/:eid/modify/voter/:id", async (req, res) => {
+  try {
+    const voter = await Voter.findByPk(req.params.id);
+    const updatedVoter = voter.updateVoter(req.body.pwd);
+
+    res.redirect(`/election/${req.params.eid}/voter`);
+  } catch (error) {
+    console.log(error);
+    return res.status(422).json(error);
+  }
+});
+
+// sign in ,out,up
+app.get("/signup", (req, res) => {
+  res.render("signup", {
+    title: "signUp",
+    csrfToken: req.csrfToken(),
+  });
+});
+
+app.get("/login", (req, res) => {
+  res.render("login", {
+    title: "login",
+    csrfToken: req.csrfToken(),
+  });
+});
+
+app.get("/signout", (req, res, next) => {
+  req.logout((err) => {
+    if (err) return next(err);
+    res.redirect("/");
+  });
 });
 
 module.exports = app;

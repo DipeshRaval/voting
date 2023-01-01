@@ -16,6 +16,7 @@ module.exports = (sequelize, DataTypes) => {
         where: {
           electionID,
         },
+        order: [["id", "ASC"]],
       });
     }
 
