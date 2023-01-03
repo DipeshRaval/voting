@@ -43,6 +43,8 @@
   <body>
     <div class="grid grid-cols-6">
       <div class="col-span-2 col-start-3">
+        <%- include("header.ejs") %>
+
         <div class="mt-4 mx-auto">
           <a
             href="/election/<%= electionID %>"
@@ -56,6 +58,12 @@
           Add Voters
         </h1>
 
+        <% if(messages && messages.error && messages.error.length > 0)  { %>
+          <% for(var i=0; i<messages.error.length; i++) { %>
+            <li class="mb-2 text-rose-500"> <%= messages.error[i] %></li>
+          <% } %>
+        <% } %>
+
         <form action="/election/<%= electionID %>/addvoter" method="post">
           <input type="hidden" name="_csrf" value="<%=csrfToken%>" />
           <div>
@@ -66,7 +74,6 @@
               type="text"
               id="vid"
               name="voterId"
-              required
               class="w-full border-2 border-gray-800 rounded px-4 py-2 my-2 text-gray-900"
             />
           </div>
@@ -78,7 +85,6 @@
               type="password"
               id="pwd"
               name="password"
-              required
               class="w-full border-2 border-gray-600 rounded px-4 py-2 my-2 text-gray-900"
             />
           </div>
@@ -92,6 +98,10 @@
         </form>
 
         <h2 class="text-xl mt-4 font-semibold">Voter List</h2>
+
+        <% if(voters.length === 0) { %>
+          <p class="text-center mt-2 text-red-700 ml-3">You didn't have added a voters yet!!!</p>
+        <% } %>
 
         <ul class="list-disc ml-5">
           <% for(let i=0; i < voters.length; i++) {%>

@@ -2,7 +2,7 @@
   "development": {
     "username": "postgres",
     "password": "Drvl@123",
-    "database": "wd-voting-dev",
+    "database": "wd-voting-dev-new",
     "host": "127.0.0.1",
     "dialect": "postgres"
   },

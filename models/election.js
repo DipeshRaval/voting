@@ -12,34 +12,55 @@ module.exports = (sequelize, DataTypes) => {
       Election.hasMany(models.Voter, {
         foreignKey: "electionId",
       });
-    }
 
-    static getElection() {
-      return this.findAll({ order: [["id", "ASC"]] });
-    }
-
-    static addElection({ title, url }) {
-      return this.create({
-        title: title,
-        url: url,
+      Election.belongsTo(models.Admin, {
+        foreignKey: "adminId",
       });
     }
 
-    static updateElection({ id, title, url }) {
+    launchElection() {
+      console.log("ddwedwedwedwedwed");
+      return this.update({ launch: true, end: false });
+    }
+
+    endElection() {
+      return this.update({ launch: false, end: true });
+    }
+
+    static getElection(id) {
+      return this.findAll({
+        where: {
+          adminId: id,
+        },
+        order: [["id", "ASC"]],
+      });
+    }
+
+    static addElection({ title, url, adminId }) {
+      return this.create({
+        title: title,
+        url: url,
+        adminId,
+      });
+    }
+
+    static updateElection({ id, title, url, adminId }) {
       return this.update(
         { title, url },
         {
           where: {
             id,
+            adminId,
           },
         }
       );
     }
 
-    static remove(id) {
+    static remove(id, adminId) {
       this.destroy({
         where: {
           id,
+          adminId,
         },
       });
     }
@@ -48,6 +69,8 @@ module.exports = (sequelize, DataTypes) => {
     {
       title: DataTypes.STRING,
       url: DataTypes.STRING,
+      launch: DataTypes.BOOLEAN,
+      end: DataTypes.BOOLEAN,
     },
     {
       sequelize,
