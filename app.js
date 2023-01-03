@@ -177,7 +177,7 @@ app.post("/election", connectEnsureLogin.ensureLoggedIn(), async (req, res) => {
     return res.redirect("/listOfElection");
   }
   try {
-    const election = await Election.addElection({
+    await Election.addElection({
       title: req.body.title,
       url: req.body.url,
       adminId: req.user.id,
@@ -240,7 +240,7 @@ app.post(
         );
       }
       try {
-        const option = await Option.addOption({
+        await Option.addOption({
           optionName: req.body.name,
           queid: req.body.qid,
         });
@@ -326,7 +326,7 @@ app.post(
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
     try {
-      const election = await Election.updateElection({
+      await Election.updateElection({
         id: req.params.id,
         title: req.body.title,
         url: req.body.url,
@@ -464,8 +464,8 @@ app.post(
         });
         return res.redirect(`/election/${req.params.eid}/voter`);
       } else {
-        console.log(err);
-        return response.status(422).json(error);
+        console.log(error);
+        return res.status(422).json(error);
       }
     }
   }
@@ -492,7 +492,7 @@ app.post(
   async (req, res) => {
     try {
       const voter = await Voter.findByPk(req.params.id);
-      const updatedVoter = voter.updateVoter(req.body.pwd);
+      voter.updateVoter(req.body.pwd);
 
       res.redirect(`/election/${req.params.eid}/voter`);
     } catch (error) {
@@ -519,7 +519,7 @@ app.get(
       return res.redirect(`/election/${req.params.eid}`);
     }
 
-    const bool = false;
+    let bool = false;
 
     const options = [];
 
@@ -565,7 +565,7 @@ app.get(
     const election = await Election.findByPk(req.params.eid);
     if (election.launch) {
       try {
-        const ele = await election.endElection();
+        await election.endElection();
         return res.redirect(`/election/${req.params.eid}`);
       } catch (error) {
         console.log(error);
@@ -649,7 +649,7 @@ app.post("/users", async (req, res) => {
       });
       return res.redirect("/signup");
     } else {
-      return response.status(422).json(error);
+      return res.status(422).json(error);
     }
   }
 });
