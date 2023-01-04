@@ -19,7 +19,6 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     launchElection() {
-      console.log("ddwedwedwedwedwed");
       return this.update({ launch: true, end: false });
     }
 
@@ -31,6 +30,15 @@ module.exports = (sequelize, DataTypes) => {
       return this.findAll({
         where: {
           adminId: id,
+        },
+        order: [["id", "ASC"]],
+      });
+    }
+
+    static findElectionByUrl(url) {
+      return this.findOne({
+        where: {
+          url: url,
         },
         order: [["id", "ASC"]],
       });

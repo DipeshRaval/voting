@@ -73,19 +73,69 @@ passport.use(
   )
 );
 
+passport.use(
+  "voter-local",
+  new LocalStrategy(
+    {
+      usernameField: "voterId",
+      passwordField: "password",
+    },
+    (username, password, done) => {
+      Voter.findOne({
+        where: {
+          email: username,
+        },
+      })
+        .then(async (user) => {
+          // console.log(user.email);
+          if (user) {
+            const bool = await bcrypt.compare(password, user.password);
+            if (bool) {
+              return done(null, user);
+            } else {
+              return done(null, false, {
+                message: "Invalid password",
+              });
+            }
+          } else {
+            return done(null, false, {
+              message: "With This ID voter doesn't exists",
+            });
+          }
+        })
+        .catch((error) => {
+          return done(error);
+        });
+    }
+  )
+);
+
 passport.serializeUser((user, done) => {
+  console.log(user);
   console.log("Serialize the user with Id : ", user.id);
+  console.log("role", user.role);
   done(null, { id: user.id, role: user.role });
 });
 
 passport.deserializeUser((id, done) => {
-  Admin.findByPk(id.id)
-    .then((user) => {
-      done(null, user);
-    })
-    .catch((err) => {
-      done(err, null);
-    });
+  if (id.role == "admin") {
+    Admin.findByPk(id.id)
+      .then((user) => {
+        done(null, user);
+      })
+      .catch((err) => {
+        done(err, null);
+      });
+  } else {
+    console.log("role :", id.role);
+    Voter.findByPk(id.id)
+      .then((user) => {
+        done(null, user);
+      })
+      .catch((err) => {
+        done(err, null);
+      });
+  }
 });
 
 //flash
@@ -119,6 +169,7 @@ app.get(
   async (req, res) => {
     console.log(req.user);
     const ele = await Election.getElection(req.user.id);
+
     res.render("election", {
       ele,
       admin: req.user,
@@ -212,6 +263,12 @@ app.get(
     console.log(req.params.id);
     try {
       const election = await Election.findByPk(req.params.id);
+
+      if (election.launch) {
+        req.flash("error", "ELection is live so ypu cann't chnage ballot");
+        return res.redirect(`/election/${election.id}`);
+      }
+
       const que = await Quetion.getQuetions(req.params.id);
       res.render("quetion", {
         election,
@@ -232,7 +289,7 @@ app.get(
     const election = await Election.findByPk(req.params.eId);
     const quetion = await Quetion.findByPk(req.params.qId);
     const Options = await Option.getOptions(req.params.qId);
-    res.render("options", {
+    return res.render("options", {
       Options,
       quetion,
       election,
@@ -568,6 +625,27 @@ app.get(
   }
 );
 
+app.get("/launch/:url", async (req, res) => {
+  const election = await Election.findElectionByUrl(req.params.url);
+  console.log(election);
+  res.render("voterlogin", {
+    election,
+    csrfToken: req.csrfToken(),
+  });
+});
+
+// app.post(
+//   "/sessionVoter/:url",
+//   passport.authenticate("voter-local", {
+//     failureRedirect: `/listOfElection`,
+//     failureFlash: true,
+//   }),
+//   (req, res) => {
+//     console.log(req.user);
+//     res.redirect(`/`);
+//   }
+// );
+
 // sign in ,out,up
 app.get("/signup", (req, res) => {
   res.render("signup", {
@@ -610,8 +688,10 @@ app.post("/users", async (req, res) => {
       firstName: req.body.firstName,
       lastName: req.body.lastName,
       email: req.body.email,
+      role: "admin",
       password: pwd,
     });
+
     req.logIn(user, (err) => {
       if (err) {
         console.log(err);
