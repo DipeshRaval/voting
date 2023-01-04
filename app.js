@@ -131,37 +131,31 @@ app.post(
   "/addquetion/:id",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
-    const election = await Election.findByPk(req.params.id);
-    console.log("lunch ", election.launch);
-    if (election.launch === false) {
-      console.log(req.body);
-      console.log(req.params.id);
-      if (req.body.title.trim().length <= 5) {
-        req.flash("error", "Title length must grater than 5");
-        return res.redirect(`/election/${req.params.id}`);
-      }
-      if (req.body.desc.length === 0) {
-        req.flash("error", "Description Cann't be empty..");
-        return res.redirect(`/election/${req.params.id}`);
-      }
-      if (req.body.desc.length <= 15) {
-        req.flash("error", "Description length must grater than 15");
-        return res.redirect(`/election/${req.params.id}`);
-      }
-      try {
-        const Que = await Quetion.addQuetion({
-          title: req.body.title,
-          description: req.body.desc,
-          electionID: req.params.id,
-        });
-        res.redirect(`/election/${req.params.id}/quetion/${Que.id}/addOptions`);
-      } catch (err) {
-        console.log(err);
-        return res.status(422).json(err);
-      }
-    } else {
-      req.flash("error", "Election is live so you cann't modify ballot");
-      return res.redirect(`/election/${req.params.id}`);
+    console.log(req.body);
+    console.log(req.params.id);
+
+    if (req.body.title.trim().length <= 5) {
+      req.flash("error", "Title length must grater than 5");
+      return res.redirect(`/election/${req.params.id}/addQuetion`);
+    }
+    if (req.body.desc.length === 0) {
+      req.flash("error", "Description Cann't be empty..");
+      return res.redirect(`/election/${req.params.id}/addQuetion`);
+    }
+    if (req.body.desc.length <= 15) {
+      req.flash("error", "Description length must grater than 15");
+      return res.redirect(`/election/${req.params.id}/addQuetion`);
+    }
+    try {
+      const Que = await Quetion.addQuetion({
+        title: req.body.title,
+        description: req.body.desc,
+        electionID: req.params.id,
+      });
+      res.redirect(`/election/${req.params.id}/quetion/${Que.id}/addOptions`);
+    } catch (err) {
+      console.log(err);
+      return res.status(422).json(err);
     }
   }
 );
@@ -212,6 +206,26 @@ app.get(
 );
 
 app.get(
+  "/election/:id/addQuetion",
+  connectEnsureLogin.ensureLoggedIn(),
+  async (req, res) => {
+    console.log(req.params.id);
+    try {
+      const election = await Election.findByPk(req.params.id);
+      const que = await Quetion.getQuetions(req.params.id);
+      res.render("quetion", {
+        election,
+        que,
+        csrfToken: req.csrfToken(),
+      });
+    } catch (err) {
+      console.log(err);
+      return res.status(422).json(err);
+    }
+  }
+);
+
+app.get(
   "/election/:eId/quetion/:qId/addOptions",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
@@ -231,29 +245,23 @@ app.post(
   "/election/:eId/quetion/:qId/addOptions",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
-    const election = await Election.findByPk(req.params.eId);
-    if (election.launch === false) {
-      if (req.body.name.length === 0) {
-        req.flash("error", "Option value cann't be empty !!!");
-        return res.redirect(
-          `/election/${req.params.eId}/quetion/${req.params.qId}/addOptions`
-        );
-      }
-      try {
-        await Option.addOption({
-          optionName: req.body.name,
-          queid: req.body.qid,
-        });
-        res.redirect(
-          `/election/${req.params.eId}/quetion/${req.params.qId}/addOptions`
-        );
-      } catch (err) {
-        console.log(err);
-        return res.status(422).json(err);
-      }
-    } else {
-      req.flash("error", "Election is live so you cann't modify ballot");
-      return res.redirect(`/election/${req.params.eId}`);
+    if (req.body.name.length === 0) {
+      req.flash("error", "Option value cann't be empty !!!");
+      return res.redirect(
+        `/election/${req.params.eId}/quetion/${req.params.qId}/addOptions`
+      );
+    }
+    try {
+      await Option.addOption({
+        optionName: req.body.name,
+        queid: req.body.qid,
+      });
+      res.redirect(
+        `/election/${req.params.eId}/quetion/${req.params.qId}/addOptions`
+      );
+    } catch (err) {
+      console.log(err);
+      return res.status(422).json(err);
     }
   }
 );
@@ -283,19 +291,13 @@ app.delete(
   "/election/:eid/delQuetion/:id",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
-    const election = await Election.findByPk(req.params.eid);
-    if (election.launch === false) {
-      console.log("We are delete a quetion with ID: ", req.params.id);
-      try {
-        const affectedRow = await Quetion.remove(req.params.id);
-        res.send(affectedRow ? true : false);
-      } catch (error) {
-        console.log(error);
-        return res.status(422).json(error);
-      }
-    } else {
-      req.flash("error", "Election is live so you cann't delete quetion");
-      return res.redirect(`/election/${req.params.eid}`);
+    console.log("We are delete a quetion with ID: ", req.params.id);
+    try {
+      const affectedRow = await Quetion.remove(req.params.id);
+      res.send(affectedRow ? true : false);
+    } catch (error) {
+      console.log(error);
+      return res.status(422).json(error);
     }
   }
 );
@@ -304,19 +306,13 @@ app.delete(
   "/election/:eid/delOption/:id",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
-    const election = await Election.findByPk(req.params.eid);
-    if (election.launch === false) {
-      console.log("We are delete a option with ID: ", req.params.id);
-      try {
-        const affectedRow = await Option.remove(req.params.id);
-        res.send(affectedRow ? true : false);
-      } catch (error) {
-        console.log(error);
-        return res.status(422).json(error);
-      }
-    } else {
-      req.flash("error", "Election is live so you cann't delete option");
-      return res.redirect(`/election/${req.params.eid}`);
+    console.log("We are delete a option with ID: ", req.params.id);
+    try {
+      const affectedRow = await Option.remove(req.params.id);
+      res.send(affectedRow ? true : false);
+    } catch (error) {
+      console.log(error);
+      return res.status(422).json(error);
     }
   }
 );
@@ -344,22 +340,16 @@ app.post(
   "/modify/:eid/quetion/:id",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
-    const election = await Election.findByPk(req.params.eid);
-    if (election.launch === false) {
-      try {
-        await Quetion.updateQuetion({
-          id: req.params.id,
-          title: req.body.title,
-          description: req.body.desc,
-        });
-        res.redirect(`/election/${req.params.eid}`);
-      } catch (error) {
-        console.log(error);
-        return res.status(422).json(error);
-      }
-    } else {
-      req.flash("error", "Election is live so you cann't modify ballot");
-      return res.redirect(`/election/${req.params.eid}`);
+    try {
+      await Quetion.updateQuetion({
+        id: req.params.id,
+        title: req.body.title,
+        description: req.body.desc,
+      });
+      res.redirect(`/election/${req.params.eid}/addQuetion`);
+    } catch (error) {
+      console.log(error);
+      return res.status(422).json(error);
     }
   }
 );
