@@ -5,11 +5,20 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vote In Election</title>
+    <link rel="stylesheet" href="/css/style.css" />
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body style="background-color: rgb(218, 182, 236)">
     <div class="grid grid-cols-6">
       <div class="col-span-2 col-start-3">
+        <div class="flex justify-end">
+          <a
+            href="/signout/<%= election.url %>/voter"
+            class="font-bold text-white bg-red-700 px-3 py-1 rounded"
+          >
+            Sign Out
+          </a>
+        </div>
         <h1 class="mt-4 text-3xl font-bold text-blue-700 text-center mb-4">
           Vote IN Election - <%= election.title %>
         </h1>

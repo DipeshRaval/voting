@@ -678,13 +678,20 @@ app.get("/vote/:url", async (req, res) => {
           csrfToken: req.csrfToken(),
         });
       } else {
-        return res.redirect("/sucessFully/voted");
+        return res.redirect(`/sucessFully/${election.id}/voted`);
       }
     }
   } catch (error) {
     console.log(error);
     return res.status(422).json(error);
   }
+});
+
+app.get("/signout/:url/Voter", (req, res, next) => {
+  req.logout((err) => {
+    if (err) return next(err);
+    res.redirect(`/launch/${req.params.url}`);
+  });
 });
 
 app.post("/userVote/:elctionId", async (req, res) => {
@@ -706,15 +713,17 @@ app.post("/userVote/:elctionId", async (req, res) => {
     }
 
     await voter.votedVoter();
-    return res.redirect("/sucessFully/voted");
+    return res.redirect(`/sucessFully/${election.id}/voted`);
   } catch (error) {
     console.log(error);
     return res.status(422).json(error);
   }
 });
 
-app.get("/sucessFully/voted", (req, res) => {
+app.get("/sucessFully/:id/voted", async (req, res) => {
+  const election = await Election.findByPk(req.params.id);
   res.render("sucessFullyVoted", {
+    election,
     csrfToken: req.csrfToken(),
   });
 });
