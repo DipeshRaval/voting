@@ -9,6 +9,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+
       Voter.belongsTo(models.Election, {
         foreignKey: "electionId",
       });
@@ -35,6 +36,10 @@ module.exports = (sequelize, DataTypes) => {
       return this.update({ password: password });
     }
 
+    votedVoter() {
+      return this.update({ voted: true });
+    }
+
     static remove(id) {
       this.destroy({
         where: {
@@ -51,6 +56,10 @@ module.exports = (sequelize, DataTypes) => {
       },
       password: DataTypes.STRING,
       voted: DataTypes.BOOLEAN,
+      role: {
+        type: DataTypes.STRING,
+        defaultValue: "voter",
+      },
     },
     {
       sequelize,

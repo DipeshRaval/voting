@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const path = require("path");
-const { Election, Quetion, Option, Voter, Admin } = require("./models");
+const { Election, Quetion, Option, Voter, Admin, Vote } = require("./models");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const csrf = require("tiny-csrf");
@@ -77,17 +77,18 @@ passport.use(
   "voter-local",
   new LocalStrategy(
     {
-      usernameField: "voterId",
+      usernameField: "voterID", // req body parameter name which we use as a id-password
       passwordField: "password",
     },
     (username, password, done) => {
+      console.log(username);
       Voter.findOne({
         where: {
-          email: username,
+          voterId: username,
         },
       })
         .then(async (user) => {
-          // console.log(user.email);
+          console.log(user);
           if (user) {
             const bool = await bcrypt.compare(password, user.password);
             if (bool) {
@@ -151,8 +152,7 @@ app.use(function (req, res, next) {
 });
 
 app.get("/", async (req, res) => {
-  console.log(req.session.passport);
-  if (req.session.passport) {
+  if (req.session.passport && req.user.role === "admin") {
     res.redirect("/listOfElection");
   } else {
     res.render("index", {
@@ -168,13 +168,17 @@ app.get(
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
     console.log(req.user);
-    const ele = await Election.getElection(req.user.id);
+    if (req.user.role == "admin") {
+      const ele = await Election.getElection(req.user.id);
 
-    res.render("election", {
-      ele,
-      admin: req.user,
-      csrfToken: req.csrfToken(),
-    });
+      res.render("election", {
+        ele,
+        admin: req.user,
+        csrfToken: req.csrfToken(),
+      });
+    } else {
+      res.redirect("/");
+    }
   }
 );
 
@@ -539,7 +543,9 @@ app.post(
   async (req, res) => {
     try {
       const voter = await Voter.findByPk(req.params.id);
-      voter.updateVoter(req.body.pwd);
+      const pwd = await bcrypt.hash(req.body.pwd, saltRound);
+
+      voter.updateVoter(pwd);
 
       res.redirect(`/election/${req.params.eid}/voter`);
     } catch (error) {
@@ -627,24 +633,91 @@ app.get(
 
 app.get("/launch/:url", async (req, res) => {
   const election = await Election.findElectionByUrl(req.params.url);
-  console.log(election);
-  res.render("voterlogin", {
-    election,
+  // console.log(election);
+  if (election.launch) {
+    return res.render("voterlogin", {
+      election,
+      csrfToken: req.csrfToken(),
+    });
+  }
+});
+
+app.post(
+  "/sessionVoter/:url",
+  passport.authenticate("voter-local", {
+    failureRedirect: "back",
+    failureFlash: true,
+  }),
+  (req, res) => {
+    console.log(req.user);
+    res.redirect(`/vote/${req.params.url}`);
+  }
+);
+
+app.get("/vote/:url", async (req, res) => {
+  if (req.user === undefined) {
+    req.flash("error", "Please Login First");
+    return res.redirect(`/launch/${req.params.url}`);
+  }
+  try {
+    const election = await Election.findElectionByUrl(req.params.url);
+    if (req.user.role === "voter") {
+      if (req.user.voted === false && election.launch) {
+        const quetions = await Quetion.getQuetions(election.id);
+        const options = [];
+
+        for (let i = 0; i < quetions.length; i++) {
+          const op = await Option.getOptions(quetions[i].id);
+          options.push(op);
+        }
+
+        return res.render("vote", {
+          election,
+          quetions,
+          options,
+          csrfToken: req.csrfToken(),
+        });
+      } else {
+        return res.redirect("/sucessFully/voted");
+      }
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(422).json(error);
+  }
+});
+
+app.post("/userVote/:elctionId", async (req, res) => {
+  try {
+    const election = await Election.findByPk(req.params.elctionId);
+    const quetions = await Quetion.getQuetions(election.id);
+    const voter = await Voter.findByPk(req.user.id);
+    console.log(req.user);
+
+    for (let i = 0; i < quetions.length; i++) {
+      const vote = req.body[`vote-${quetions[i].id}`];
+      console.log(vote);
+      await Vote.addVote({
+        electionId: election.id,
+        quetionId: quetions[i].id,
+        voterId: voter.id,
+        voteVal: vote,
+      });
+    }
+
+    await voter.votedVoter();
+    return res.redirect("/sucessFully/voted");
+  } catch (error) {
+    console.log(error);
+    return res.status(422).json(error);
+  }
+});
+
+app.get("/sucessFully/voted", (req, res) => {
+  res.render("sucessFullyVoted", {
     csrfToken: req.csrfToken(),
   });
 });
-
-// app.post(
-//   "/sessionVoter/:url",
-//   passport.authenticate("voter-local", {
-//     failureRedirect: `/listOfElection`,
-//     failureFlash: true,
-//   }),
-//   (req, res) => {
-//     console.log(req.user);
-//     res.redirect(`/`);
-//   }
-// );
 
 // sign in ,out,up
 app.get("/signup", (req, res) => {
