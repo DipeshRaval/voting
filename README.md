@@ -43,3 +43,10 @@ npx sequelize-cli db:migrate
 ```
 npm run start
 ```
+
+- For run a test Case
+
+```
+npm test
+
+```
