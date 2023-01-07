@@ -1,6 +1,6 @@
 # Online Voting Platform
 
-** Introduction **
+## Introduction
 
 - This is an Online Voting Platform where admin can sign in,sign up and sign out. After sign up admin will redirect to election page where the admin can create a an Elections as well as admin can see the election which is create by admin.
 
