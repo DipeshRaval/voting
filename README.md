@@ -1,5 +1,9 @@
 # Online Voting Platform
 
+## Live app Link :point_down::point_down::point_down:
+
+- Link -> (https://online-voting-kcy6.onrender.com/)
+
 ## Introduction
 
 - This is an Online Voting Platform where admin can sign in,sign up and sign out. After sign up admin will redirect to election page where the admin can create a an Elections as well as admin can see the election which is create by admin.
@@ -48,5 +52,4 @@ npm run start
 
 ```
 npm test
-
 ```
