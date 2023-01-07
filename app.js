@@ -170,12 +170,17 @@ app.get(
     console.log(req.user);
     if (req.user.role == "admin") {
       const ele = await Election.getElection(req.user.id);
-
-      res.render("election", {
-        ele,
-        admin: req.user,
-        csrfToken: req.csrfToken(),
-      });
+      if (req.accepts("html")) {
+        res.render("election", {
+          ele,
+          admin: req.user,
+          csrfToken: req.csrfToken(),
+        });
+      } else {
+        res.json({
+          ele,
+        });
+      }
     } else {
       res.redirect("/");
     }
@@ -274,11 +279,18 @@ app.get(
       }
 
       const que = await Quetion.getQuetions(req.params.id);
-      res.render("quetion", {
-        election,
-        que,
-        csrfToken: req.csrfToken(),
-      });
+      if (req.accepts("html")) {
+        res.render("quetion", {
+          election,
+          que,
+          csrfToken: req.csrfToken(),
+        });
+      } else {
+        res.json({
+          election,
+          que,
+        });
+      }
     } catch (err) {
       console.log(err);
       return res.status(422).json(err);
