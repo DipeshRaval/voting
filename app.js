@@ -305,12 +305,20 @@ app.get(
     const election = await Election.findByPk(req.params.eId);
     const quetion = await Quetion.findByPk(req.params.qId);
     const Options = await Option.getOptions(req.params.qId);
-    return res.render("options", {
-      Options,
-      quetion,
-      election,
-      csrfToken: req.csrfToken(),
-    });
+    if (req.accepts("html")) {
+      return res.render("options", {
+        Options,
+        quetion,
+        election,
+        csrfToken: req.csrfToken(),
+      });
+    } else {
+      res.json({
+        Options,
+        quetion,
+        election,
+      });
+    }
   }
 );
 
@@ -484,11 +492,17 @@ app.get(
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
     const voters = await Voter.getVoters(req.params.eid);
-    res.render("voter", {
-      electionID: req.params.eid,
-      voters,
-      csrfToken: req.csrfToken(),
-    });
+    if (req.accepts("html")) {
+      res.render("voter", {
+        electionID: req.params.eid,
+        voters,
+        csrfToken: req.csrfToken(),
+      });
+    } else {
+      res.json({
+        voters,
+      });
+    }
   }
 );
 
