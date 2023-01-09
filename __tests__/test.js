@@ -38,7 +38,7 @@ describe("Test case for database", () => {
     }
   });
 
-  test("Sign Up", async () => {
+  test("admin Sign Up", async () => {
     var res = await agent.get("/signup");
     var csrfToken = getCsrfToken(res);
     const response = await agent.post("/users").send({
@@ -51,13 +51,22 @@ describe("Test case for database", () => {
     expect(response.statusCode).toBe(302);
   });
 
-  test("sign out", async () => {
+  test("admin sign out", async () => {
     var res = await agent.get("/listofElection");
     expect(res.statusCode).toBe(200);
     res = await agent.get("/signout");
     expect(res.statusCode).toBe(302);
     res = await agent.get("/listofElection");
     expect(res.statusCode).toBe(302);
+  });
+
+  test("admin log in", async () => {
+    var agent = request.agent(server);
+    var res = await agent.get("/listofElection");
+    expect(res.statusCode).toBe(302);
+    await login(agent, "dipu@gmail.com", "dipu");
+    res = await agent.get("/listofElection");
+    expect(res.statusCode).toBe(200);
   });
 
   test("Creates a Election", async () => {
@@ -71,6 +80,66 @@ describe("Test case for database", () => {
       _csrf: csrfToken,
     });
     expect(response.statusCode).toBe(302);
+  });
+
+  test("Modify a election", async () => {
+    var agent = request.agent(server);
+    await login(agent, "dipu@gmail.com", "dipu");
+    var res = await agent.get("/listofElection");
+    var csrfToken = getCsrfToken(res);
+    await agent.post("/election").send({
+      title: "Head Of community",
+      url: "HOC",
+      _csrf: csrfToken,
+    });
+
+    res = await agent.get("/listofElection").set("Accept", "application/json");
+    const parseElections = JSON.parse(res.text);
+    const election = parseElections.ele[parseElections.ele.length - 1];
+
+    res = await agent.get("/listofElection");
+    csrfToken = getCsrfToken(res);
+
+    res = await agent.post(`/modify/election/${election.id}`).send({
+      title: "Head Of Department",
+      url: "HOD",
+      _csrf: csrfToken,
+    });
+
+    expect(res.statusCode).toBe(302);
+
+    res = await agent.get("/listofElection").set("Accept", "application/json");
+    var ParseElections = JSON.parse(res.text);
+    var updateelection = ParseElections.ele[ParseElections.ele.length - 1];
+
+    expect(updateelection.title).toBe("Head Of Department");
+    expect(updateelection.url).toBe("HOD");
+  });
+
+  test("Delete a election", async () => {
+    var agent = request.agent(server);
+    await login(agent, "dipu@gmail.com", "dipu");
+    var res = await agent.get("/listofElection");
+    var csrfToken = getCsrfToken(res);
+    await agent.post("/election").send({
+      title: "Temp Election for delete test",
+      url: "deltest",
+      _csrf: csrfToken,
+    });
+
+    res = await agent.get("/listofElection").set("Accept", "application/json");
+    const parseElections = JSON.parse(res.text);
+    const election = parseElections.ele[parseElections.ele.length - 1];
+
+    res = await agent.get("/listofElection");
+    csrfToken = getCsrfToken(res);
+
+    const rese = await agent
+      .delete(`/delElection/${election.id}`)
+      .send({ _csrf: csrfToken });
+
+    const bool = Boolean(rese.text);
+    expect(bool).toBe(true);
   });
 
   test("Creates a Quetion", async () => {
@@ -111,6 +180,52 @@ describe("Test case for database", () => {
 
     quetions = JSON.parse(res.text);
     expect(quetions.que.length).toBe(totalQuetions + 1);
+  });
+
+  test("should modify a quetion", async () => {
+    var agent = request.agent(server);
+    await login(agent, "dipu@gmail.com", "dipu");
+
+    const elections = await agent
+      .get("/listofElection")
+      .set("Accept", "application/json");
+    const parseElections = JSON.parse(elections.text);
+    const election = parseElections.ele[parseElections.ele.length - 1];
+
+    res = await agent.get(`/election/${election.id}/addQuetion`);
+    var csrfToken = getCsrfToken(res);
+
+    await agent.post(`/addquetion/${election.id}`).send({
+      title: "Create a quetion for Modify",
+      desc: "Create a quetion for Modify so test case run for modify",
+      _csrf: csrfToken,
+    });
+
+    res = await agent
+      .get(`/election/${election.id}/addQuetion`)
+      .set("Accept", "application/json");
+    var quetions = JSON.parse(res.text);
+    const newQuetion = quetions.que[quetions.que.length - 1];
+
+    res = await agent.get(`/election/${election.id}/addQuetion`);
+    csrfToken = getCsrfToken(res);
+
+    await agent.post(`/modify/${election.id}/quetion/${newQuetion.id}`).send({
+      title: "Modify a quetion for a test modify",
+      desc: "here modify a quetion for a test case",
+      _csrf: csrfToken,
+    });
+
+    res = await agent
+      .get(`/election/${election.id}/addQuetion`)
+      .set("Accept", "application/json");
+    quetions = JSON.parse(res.text);
+    const UpdateQuetion = quetions.que[quetions.que.length - 1];
+
+    expect(UpdateQuetion.title).toBe("Modify a quetion for a test modify");
+    expect(UpdateQuetion.description).toBe(
+      "here modify a quetion for a test case"
+    );
   });
 
   test("delete a Quetion", async () => {
@@ -275,5 +390,94 @@ describe("Test case for database", () => {
     resParse = JSON.parse(res.text);
 
     expect(resParse.voters.length).toBe(totalVoter + 1);
+  });
+
+  test("should modify a voter", async () => {
+    var agent = request.agent(server);
+    await login(agent, "dipu@gmail.com", "dipu");
+
+    const elections = await agent
+      .get("/listofElection")
+      .set("Accept", "application/json");
+    const parseElections = JSON.parse(elections.text);
+    const election = parseElections.ele[parseElections.ele.length - 1];
+
+    res = await agent.get(`/election/${election.id}/voter`);
+    var csrfToken = getCsrfToken(res);
+
+    await agent.post(`/election/${election.id}/addvoter`).send({
+      voterId: "DIpu",
+      password: "12345678",
+      _csrf: csrfToken,
+    });
+
+    res = await agent
+      .get(`/election/${election.id}/voter`)
+      .set("Accept", "application/json");
+    var resParse = JSON.parse(res.text);
+    const voter = resParse.voters[resParse.voters.length - 1];
+
+    res = await agent.get(`/election/${election.id}/voter`);
+    csrfToken = getCsrfToken(res);
+
+    res = await agent
+      .post(`/election/${election.id}/modify/voter/${voter.id}`)
+      .send({
+        pwd: "87654321",
+        _csrf: csrfToken,
+      });
+
+    expect(res.statusCode).toBe(302);
+  });
+
+  test("should be delete a voter from a elction", async () => {
+    var agent = request.agent(server);
+    await login(agent, "dipu@gmail.com", "dipu");
+
+    const elections = await agent
+      .get("/listofElection")
+      .set("Accept", "application/json");
+    const parseElections = JSON.parse(elections.text);
+    const election = parseElections.ele[parseElections.ele.length - 1];
+
+    var res = await agent.get(`/election/${election.id}/voter`);
+    var csrfToken = getCsrfToken(res);
+
+    await agent.post(`/election/${election.id}/addvoter`).send({
+      voterId: "Dipesh123",
+      password: "12345678",
+      _csrf: csrfToken,
+    });
+
+    res = await agent
+      .get(`/election/${election.id}/voter`)
+      .set("Accept", "application/json");
+    var resParse = JSON.parse(res.text);
+    const voter = resParse.voters[resParse.voters.length - 1];
+
+    res = await agent.get(`/election/${election.id}/voter`);
+    csrfToken = getCsrfToken(res);
+
+    const rese = await agent
+      .delete(`/delVoter/${voter.id}`)
+      .send({ _csrf: csrfToken });
+
+    const bool = Boolean(rese.text);
+    expect(bool).toBe(true);
+  });
+
+  test("should preview a election", async () => {
+    var agent = request.agent(server);
+    await login(agent, "dipu@gmail.com", "dipu");
+
+    const elections = await agent
+      .get("/listofElection")
+      .set("Accept", "application/json");
+    const parseElections = JSON.parse(elections.text);
+    const election = parseElections.ele[parseElections.ele.length - 1];
+
+    res = await agent.get(`/election/${election.id}/preview`);
+
+    expect(res.statusCode).toBe(200);
   });
 });
