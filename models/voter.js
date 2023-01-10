@@ -24,6 +24,26 @@ module.exports = (sequelize, DataTypes) => {
       });
     }
 
+    static voting(electionId) {
+      return this.findAll({
+        where: {
+          voted: true,
+          electionId,
+        },
+        order: [["id", "ASC"]],
+      });
+    }
+
+    static remainVote(electionId) {
+      return this.findAll({
+        where: {
+          voted: false,
+          electionId,
+        },
+        order: [["id", "ASC"]],
+      });
+    }
+
     static addVoter({ voterId, password, electionId }) {
       return this.create({
         voterId,

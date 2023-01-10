@@ -13,6 +13,17 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "adminId",
       });
     }
+
+    static resetPassword(email, password) {
+      return this.update(
+        { password },
+        {
+          where: {
+            email,
+          },
+        }
+      );
+    }
   }
   Admin.init(
     {

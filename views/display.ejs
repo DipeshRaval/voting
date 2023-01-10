@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Manage Election</title>
     <script src="https://cdn.tailwindcss.com"></script>
-
+    <link rel="stylesheet" href="/css/style.css" />
   </head>
   <body>
     <div class="grid grid-cols-6">
@@ -70,7 +70,7 @@
         <div class="flex justify-between mt-6 mb-3">
           <a href="/election/<%=election.id%>/launch" class="bg-pink-600 hover:bg-pink-700 text-white font-semibold border-2 border-gray-700 px-2 py-1 rounded">Launch Election</a>
           <a href="/election/<%=election.id%>/end" class="bg-red-500 hover:bg-red-600 text-white font-semibold border-2 border-gray-700 px-2 py-1 rounded">End Election</a>
-          <a href="" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold border-2 border-gray-700 px-2 py-1 rounded">Preview Result</a>
+          <a href="/election/<%=election.id%>/preview/result" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold border-2 border-gray-700 px-2 py-1 rounded">Preview Result</a>
         </div>
 
       </div>

@@ -436,16 +436,22 @@ app.post(
 );
 
 app.post(
-  "/election/:eId/quetion/:qId/modifyOptions/:id",
+  "/election/:eId/quetion/:qId/option/:id/modify",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
     const election = await Election.findByPk(req.params.eId);
     if (election.launch === false) {
       try {
-        await Option.updateOption({
-          id: req.params.id,
-          optionName: req.body.optionName,
-        });
+        const option = await Option.findByPk(req.params.id);
+        const update = await option.updating(req.body.optionName);
+
+        // const out = await Option.updateOption({
+        //   id: req.params.id,
+        //   optionName: req.body.optionName,
+        // });
+        // console.log(out);
+
+        console.log(update);
         res.redirect(
           `/election/${req.params.eId}/quetion/${req.params.qId}/addOptions`
         );
@@ -754,6 +760,96 @@ app.get("/sucessFully/:id/voted", async (req, res) => {
   });
 });
 
+app.get(
+  "/election/:id/preview/result",
+  connectEnsureLogin.ensureLoggedIn(),
+  async (req, res) => {
+    if (req.user.role === "admin") {
+      const election = await Election.findByPk(req.params.id);
+      if (election.launch === false) {
+        req.flash(
+          "error",
+          "Please first a launch a election after that You can preview result"
+        );
+        return res.redirect(`/election/${election.id}`);
+      }
+      try {
+        const quetions = await Quetion.getQuetions(req.params.id);
+        const optionList = [];
+        const Votes = [];
+        const quetionId = [];
+
+        for (let i = 0; i < quetions.length; i++) {
+          quetionId.push(quetions[i].id);
+          const options = await Option.getOptions(quetions[i].id);
+          let optionNames = [];
+          const voteArray = [];
+          for (let j = 0; j < options.length; j++) {
+            optionNames.push(options[j].optionName);
+            const vote = await Vote.retriveVoteCount(
+              options[j].optionName,
+              election.id,
+              quetions[i].id
+            );
+            voteArray.push(vote.length);
+          }
+          optionList.push(optionNames);
+          Votes.push(voteArray);
+        }
+
+        const totalVoters = await Voter.getVoters(election.id);
+        const remianVoting = await Voter.remainVote(election.id);
+        const votingCount = await Voter.voting(election.id);
+
+        return res.render("previewResult", {
+          election,
+          quetions,
+          quetionId,
+          optionList,
+          Votes,
+          totalVoters: totalVoters.length,
+          remianVoting: remianVoting.length,
+          votingCount: votingCount.length,
+        });
+      } catch (error) {
+        console.log(error);
+        return res.status(422).json(error);
+      }
+    }
+  }
+);
+
+app.post("/forgot/password", async (req, res) => {
+  if (req.body.password.length === 0) {
+    req.flash("error", "password can't be empty for a update!!");
+    return res.redirect("/login");
+  }
+  if (req.body.email.length === 0) {
+    req.flash("error", "email can't be empty for a update!!");
+    return res.redirect("/login");
+  }
+  if (req.body.password !== req.body.conformPassword) {
+    req.flash("error", "Your password and conform Password not same");
+    return res.redirect("/login");
+  }
+  try {
+    const pwd = await bcrypt.hash(req.body.password, saltRound);
+    const admin = await Admin.resetPassword(req.body.email, pwd);
+    if (admin == 0) {
+      req.flash(
+        "error",
+        "You are trying to update a password which user dosen't exists"
+      );
+      return res.redirect("/login");
+    }
+    req.flash("success", "Password Updated!!!");
+    return res.redirect("/login");
+  } catch (error) {
+    console.log(error);
+    return res.status(422).json(error);
+  }
+});
+
 // sign in ,out,up
 app.get("/signup", (req, res) => {
   res.render("signup", {
@@ -772,6 +868,7 @@ app.get("/login", (req, res) => {
 app.get("/signout", (req, res, next) => {
   req.logout((err) => {
     if (err) return next(err);
+    req.flash("success", "Log out successfully!!!");
     res.redirect("/");
   });
 });
@@ -784,11 +881,16 @@ app.post(
   }),
   (req, res) => {
     console.log(req.user);
+    req.flash("success", "Log In successfully!!!");
     res.redirect("/listOfElection");
   }
 );
 
 app.post("/users", async (req, res) => {
+  if (req.body.password.length === 0) {
+    req.flash("error", "password can't be empty!!");
+    return res.redirect("/signup");
+  }
   console.log("Body : ", req.body.firstName);
   const pwd = await bcrypt.hash(req.body.password, saltRound);
   try {
@@ -804,6 +906,7 @@ app.post("/users", async (req, res) => {
       if (err) {
         console.log(err);
       }
+      req.flash("success", "Sign Up successfully!!!");
       return res.redirect("/listOfElection");
     });
   } catch (error) {

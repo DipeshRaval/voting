@@ -25,6 +25,16 @@ module.exports = (sequelize, DataTypes) => {
     static addVote({ electionId, quetionId, voterId, voteVal }) {
       return this.create({ electionId, quetionId, voterId, voteVal });
     }
+
+    static retriveVoteCount(optionName, electionId, quetionId) {
+      return this.findAll({
+        where: {
+          voteVal: optionName,
+          quetionId,
+          electionId,
+        },
+      });
+    }
   }
   Vote.init(
     {

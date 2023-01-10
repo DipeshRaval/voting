@@ -27,16 +27,21 @@ module.exports = (sequelize, DataTypes) => {
       });
     }
 
-    static updateOption({ id, optionName }) {
-      return this.update(
-        { optionName },
-        {
-          where: {
-            id,
-          },
-        }
-      );
+    updating(optionName) {
+      console.log("value = ", optionName);
+      return this.update({ optionName: optionName });
     }
+
+    // static updateOption({ id, optionName }) {
+    //   return this.update(
+    //     { optionName },
+    //     {
+    //       where: {
+    //         id,
+    //       },
+    //     }
+    //   );
+    // }
 
     static remove(id) {
       this.destroy({

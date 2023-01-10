@@ -13,7 +13,7 @@
       integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD"
       crossorigin="anonymous"
     />
-
+    <link rel="stylesheet" href="/css/style.css" />
     <script>
       const token = document
         .querySelector("meta[name='csrf-token']")
@@ -49,6 +49,12 @@
         <div class="mt-3">
           <h1 class="text-center text-2xl font-bold text-green-800">Welcome <%= admin.firstName %>!!!!</h1>
         </div>
+
+        <% if(messages.success){ %>
+          <div class="alert alert-success" role="alert">
+              <%= messages.success %>
+          </div>
+        <% } %>
 
         <h2 class="text-xl mt-3 mb-2 font-semibold">Create a Election</h2>
 

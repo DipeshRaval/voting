@@ -22,6 +22,7 @@
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.0",
+    "chartjs": "^0.3.24",
     "cheerio": "^1.0.0-rc.12",
     "connect-ensure-login": "^0.1.1",
     "connect-flash": "^0.1.1",
