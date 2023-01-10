@@ -402,6 +402,14 @@ app.post(
   "/modify/election/:id",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
+    if (req.body.title.trim().length < 5) {
+      req.flash("error", "election name length must grater than 5");
+      return res.redirect("/listOfElection");
+    }
+    if (req.body.url.length === 0) {
+      req.flash("error", "Url Cann't be empty..");
+      return res.redirect("/listOfElection");
+    }
     try {
       await Election.updateElection({
         id: req.params.id,
@@ -409,6 +417,7 @@ app.post(
         url: req.body.url,
         adminId: req.user.id,
       });
+      req.flash("success", "Election modified successfully!!!");
       res.redirect("/listOfElection");
     } catch (error) {
       console.log(error);
@@ -421,13 +430,26 @@ app.post(
   "/modify/:eid/quetion/:id",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
+    if (req.body.title.trim().length <= 5) {
+      req.flash("error", "Title length must grater than 5");
+      return res.redirect(`/election/${req.params.eid}/addQuetion`);
+    }
+    if (req.body.desc.length === 0) {
+      req.flash("error", "Description Cann't be empty..");
+      return res.redirect(`/election/${req.params.eid}/addQuetion`);
+    }
+    if (req.body.desc.length <= 15) {
+      req.flash("error", "Description length must grater than 15");
+      return res.redirect(`/election/${req.params.eid}/addQuetion`);
+    }
     try {
       await Quetion.updateQuetion({
         id: req.params.id,
         title: req.body.title,
         description: req.body.desc,
       });
-      res.redirect(`/election/${req.params.eid}/addQuetion`);
+      req.flash("success", "Quetion modified successfully!!!");
+      return res.redirect(`/election/${req.params.eid}/addQuetion`);
     } catch (error) {
       console.log(error);
       return res.status(422).json(error);
@@ -440,6 +462,12 @@ app.post(
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
     const election = await Election.findByPk(req.params.eId);
+    if (req.body.optionName.length === 0) {
+      req.flash("error", "Option value cann't be empty !!!");
+      return res.redirect(
+        `/election/${req.params.eId}/quetion/${req.params.qId}/addOptions`
+      );
+    }
     if (election.launch === false) {
       try {
         const option = await Option.findByPk(req.params.id);
@@ -452,6 +480,7 @@ app.post(
         // console.log(out);
 
         console.log(update);
+        req.flash("success", "Option modified successfully!!!");
         res.redirect(
           `/election/${req.params.eId}/quetion/${req.params.qId}/addOptions`
         );
@@ -573,12 +602,21 @@ app.post(
   "/election/:eid/modify/voter/:id",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
+    if (req.body.pwd.length === 0) {
+      req.flash("error", "Password can not be empty !!");
+      return res.redirect(`/election/${req.params.eid}/voter`);
+    }
+    if (req.body.pwd.length <= 5) {
+      req.flash("error", "Password must grater than 5 !!");
+      return res.redirect(`/election/${req.params.eid}/voter`);
+    }
     try {
       const voter = await Voter.findByPk(req.params.id);
       const pwd = await bcrypt.hash(req.body.pwd, saltRound);
 
-      voter.updateVoter(pwd);
+      await voter.updateVoter(pwd);
 
+      req.flash("success", "Voter modified successfully!!!");
       res.redirect(`/election/${req.params.eid}/voter`);
     } catch (error) {
       console.log(error);
@@ -665,11 +703,44 @@ app.get(
 
 app.get("/launch/:url", async (req, res) => {
   const election = await Election.findElectionByUrl(req.params.url);
-  // console.log(election);
   if (election.launch) {
     return res.render("voterlogin", {
       election,
       csrfToken: req.csrfToken(),
+    });
+  } else if (election.end) {
+    const quetions = await Quetion.getQuetions(election.id);
+    const optionList = [];
+    const Votes = [];
+    const quetionId = [];
+
+    for (let i = 0; i < quetions.length; i++) {
+      quetionId.push(quetions[i].id);
+      const options = await Option.getOptions(quetions[i].id);
+      let optionNames = [];
+      const voteArray = [];
+      for (let j = 0; j < options.length; j++) {
+        optionNames.push(options[j].optionName);
+        const vote = await Vote.retriveVoteCount(
+          options[j].optionName,
+          election.id,
+          quetions[i].id
+        );
+        voteArray.push(vote.length);
+      }
+      optionList.push(optionNames);
+      Votes.push(voteArray);
+    }
+
+    const votingCount = await Voter.voting(election.id);
+
+    return res.render("resultPage", {
+      election,
+      quetions,
+      quetionId,
+      optionList,
+      Votes,
+      votingCount: votingCount.length,
     });
   }
 });
@@ -766,7 +837,7 @@ app.get(
   async (req, res) => {
     if (req.user.role === "admin") {
       const election = await Election.findByPk(req.params.id);
-      if (election.launch === false) {
+      if (election.launch === false && election.end === false) {
         req.flash(
           "error",
           "Please first a launch a election after that You can preview result"

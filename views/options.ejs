@@ -75,6 +75,12 @@
           <% } %>
         <% } %>
 
+        <% if(messages.success){ %>
+          <div class="alert alert-success" role="alert">
+              <%= messages.success %>
+          </div>
+        <% } %>
+
         <form
           action="/election/<%= election.id %>/quetion/<%= quetion.id %>/addOptions"
           method="post"
@@ -144,7 +150,7 @@
                       ></button>
                     </div>
                     <div class="modal-body">
-                      <form action="/election/<%= election.id %>/quetion/<%= quetion.id %>/modifyOptions/<%= Options[i].id %>" method="post">
+                      <form action="/election/<%= election.id %>/quetion/<%= quetion.id %>/option/<%= Options[i].id %>/modify" method="post">
                         <input type="hidden" name="_csrf" value="<%=csrfToken%>" />
                         <div class="mb-3">
                           <label for="recipient-name<%= Options[i].id %>" class="col-form-label"

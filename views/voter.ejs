@@ -65,6 +65,12 @@
           <% } %>
         <% } %>
 
+        <% if(messages.success){ %>
+          <div class="alert alert-success" role="alert">
+              <%= messages.success %>
+          </div>
+        <% } %>
+
         <form action="/election/<%= electionID %>/addvoter" method="post">
           <input type="hidden" name="_csrf" value="<%=csrfToken%>" />
           <div>

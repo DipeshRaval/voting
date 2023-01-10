@@ -63,6 +63,12 @@
           <% } %>
         <% } %>
 
+        <% if(messages.success){ %>
+          <div class="alert alert-success" role="alert">
+              <%= messages.success %>
+          </div>
+        <% } %>
+
         <form
           action="/addquetion/<%= election.id %>"
           method="post"
