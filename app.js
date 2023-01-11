@@ -213,9 +213,9 @@ app.post(
         electionID: req.params.id,
       });
       res.redirect(`/election/${req.params.id}/quetion/${Que.id}/addOptions`);
-    } catch (err) {
-      console.log(err);
-      return res.status(422).json(err);
+    } catch (error) {
+      console.log(error);
+      return res.status(422).json(error);
     }
   }
 );
@@ -237,9 +237,18 @@ app.post("/election", connectEnsureLogin.ensureLoggedIn(), async (req, res) => {
       adminId: req.user.id,
     });
     res.redirect("/listOfElection");
-  } catch (err) {
-    console.log(err);
-    return res.status(422).json(err);
+  } catch (error) {
+    console.log(error);
+    if (error.name == "SequelizeUniqueConstraintError") {
+      error.errors.forEach((e) => {
+        if (e.message == "url must be unique") {
+          req.flash("error", "Url used before so provide anothor one.");
+        }
+      });
+      return res.redirect("/listOfElection");
+    } else {
+      return res.status(422).json(error);
+    }
   }
 });
 
@@ -420,8 +429,17 @@ app.post(
       req.flash("success", "Election modified successfully!!!");
       res.redirect("/listOfElection");
     } catch (error) {
-      console.log(error);
-      return res.status(422).json(error);
+      if (error.name == "SequelizeUniqueConstraintError") {
+        error.errors.forEach((e) => {
+          if (e.message == "url must be unique") {
+            req.flash("error", "Url used before so provide anothor one.");
+          }
+        });
+        return res.redirect("/listOfElection");
+      } else {
+        console.log(error);
+        return res.status(422).json(error);
+      }
     }
   }
 );
@@ -703,46 +721,10 @@ app.get(
 
 app.get("/launch/:url", async (req, res) => {
   const election = await Election.findElectionByUrl(req.params.url);
-  if (election.launch) {
-    return res.render("voterlogin", {
-      election,
-      csrfToken: req.csrfToken(),
-    });
-  } else if (election.end) {
-    const quetions = await Quetion.getQuetions(election.id);
-    const optionList = [];
-    const Votes = [];
-    const quetionId = [];
-
-    for (let i = 0; i < quetions.length; i++) {
-      quetionId.push(quetions[i].id);
-      const options = await Option.getOptions(quetions[i].id);
-      let optionNames = [];
-      const voteArray = [];
-      for (let j = 0; j < options.length; j++) {
-        optionNames.push(options[j].optionName);
-        const vote = await Vote.retriveVoteCount(
-          options[j].optionName,
-          election.id,
-          quetions[i].id
-        );
-        voteArray.push(vote.length);
-      }
-      optionList.push(optionNames);
-      Votes.push(voteArray);
-    }
-
-    const votingCount = await Voter.voting(election.id);
-
-    return res.render("resultPage", {
-      election,
-      quetions,
-      quetionId,
-      optionList,
-      Votes,
-      votingCount: votingCount.length,
-    });
-  }
+  return res.render("voterlogin", {
+    election,
+    csrfToken: req.csrfToken(),
+  });
 });
 
 app.post(
@@ -753,17 +735,29 @@ app.post(
   }),
   (req, res) => {
     console.log(req.user);
+    req.flash("success", "Sign In successfully!!!");
     res.redirect(`/vote/${req.params.url}`);
   }
 );
 
 app.get("/vote/:url", async (req, res) => {
+  const election = await Election.findElectionByUrl(req.params.url);
+  if (election.launch === false && election.end === false) {
+    req.flash("error", "Election is not live so you can't vote on it.");
+    return res.redirect(`/launch/${req.params.url}`);
+  }
   if (req.user === undefined) {
     req.flash("error", "Please Login First");
     return res.redirect(`/launch/${req.params.url}`);
   }
   try {
-    const election = await Election.findElectionByUrl(req.params.url);
+    if (req.user.electionId != election.id) {
+      req.flash(
+        "error",
+        "You Can't vote in this election beacuse you didn.t added in this election"
+      );
+      return res.redirect(`/launch/${req.params.url}`);
+    }
     if (req.user.role === "voter") {
       if (req.user.voted === false && election.launch) {
         const quetions = await Quetion.getQuetions(election.id);
@@ -780,6 +774,56 @@ app.get("/vote/:url", async (req, res) => {
           options,
           csrfToken: req.csrfToken(),
         });
+      } else if (election.end && req.user.voted) {
+        const quetions = await Quetion.getQuetions(election.id);
+        const optionList = [];
+        const Votes = [];
+        const quetionId = [];
+        const voterVotePerQuetion = [];
+
+        for (let i = 0; i < quetions.length; i++) {
+          quetionId.push(quetions[i].id);
+          const options = await Option.getOptions(quetions[i].id);
+          let optionNames = [];
+          const voteArray = [];
+          const choise = await Vote.findChoise(
+            election.id,
+            quetions[i].id,
+            req.user.id
+          );
+
+          voterVotePerQuetion.push(choise.voteVal);
+
+          for (let j = 0; j < options.length; j++) {
+            optionNames.push(options[j].optionName);
+            const vote = await Vote.retriveVoteCount(
+              options[j].optionName,
+              election.id,
+              quetions[i].id
+            );
+            voteArray.push(vote.length);
+          }
+          optionList.push(optionNames);
+          Votes.push(voteArray);
+        }
+
+        const votingCount = await Voter.voting(election.id);
+
+        return res.render("resultPage", {
+          election,
+          quetions,
+          quetionId,
+          voterVotePerQuetion,
+          optionList,
+          Votes,
+          votingCount: votingCount.length,
+        });
+      } else if (election.end && req.user.voted === false) {
+        req.flash(
+          "error",
+          "You Can't see the result of election because you are not vote in this election"
+        );
+        return res.redirect(`/launch/${req.params.url}`);
       } else {
         return res.redirect(`/sucessFully/${election.id}/voted`);
       }
@@ -793,6 +837,7 @@ app.get("/vote/:url", async (req, res) => {
 app.get("/signout/:url/Voter", (req, res, next) => {
   req.logout((err) => {
     if (err) return next(err);
+    req.flash("success", "Sign Out successfully!!!");
     res.redirect(`/launch/${req.params.url}`);
   });
 });

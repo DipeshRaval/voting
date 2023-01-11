@@ -26,6 +26,16 @@ module.exports = (sequelize, DataTypes) => {
       return this.create({ electionId, quetionId, voterId, voteVal });
     }
 
+    static findChoise(electionId, quetionId, voterId) {
+      return this.findOne({
+        where: {
+          electionId,
+          voterId,
+          quetionId,
+        },
+      });
+    }
+
     static retriveVoteCount(optionName, electionId, quetionId) {
       return this.findAll({
         where: {
