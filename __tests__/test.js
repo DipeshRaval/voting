@@ -310,6 +310,68 @@ describe("Test case for database", () => {
     expect(resParse.Options.length).toBe(totalOptions + 1);
   });
 
+  test("Modify a option in quetion", async () => {
+    var agent = request.agent(server);
+    await login(agent, "dipu@gmail.com", "dipu");
+
+    const elections = await agent
+      .get("/listofElection")
+      .set("Accept", "application/json");
+    const parseElections = JSON.parse(elections.text);
+    const election = parseElections.ele[parseElections.ele.length - 1];
+
+    res = await agent
+      .get(`/election/${election.id}/addQuetion`)
+      .set("Accept", "application/json");
+    var quetions = JSON.parse(res.text);
+    const totalQuetions = quetions.que.length;
+    const que = quetions.que[totalQuetions - 1];
+
+    res = await agent.get(
+      `/election/${election.id}/quetion/${que.id}/addOptions`
+    );
+    csrfToken = getCsrfToken(res);
+
+    await agent
+      .post(`/election/${election.id}/quetion/${que.id}/addOptions`)
+      .send({
+        name: "Jinal",
+        qid: que.id,
+        _csrf: csrfToken,
+      });
+
+    res = await agent
+      .get(`/election/${election.id}/quetion/${que.id}/addOptions`)
+      .set("Accept", "application/json");
+    csrfToken = getCsrfToken(res);
+    var resParse = JSON.parse(res.text);
+    const totalOptions = resParse.Options.length;
+    var newOption = resParse.Options[totalOptions - 1];
+
+    res = await agent.get(
+      `/election/${election.id}/quetion/${que.id}/addOptions`
+    );
+    csrfToken = getCsrfToken(res);
+
+    await agent
+      .post(
+        `/election/${election.id}/quetion/${que.id}/option/${newOption.id}/modify`
+      )
+      .send({
+        optionName: "Jeni",
+        _csrf: csrfToken,
+      });
+
+    res = await agent
+      .get(`/election/${election.id}/quetion/${que.id}/addOptions`)
+      .set("Accept", "application/json");
+    csrfToken = getCsrfToken(res);
+    resParse = JSON.parse(res.text);
+    var updateOP = resParse.Options[resParse.Options.length - 1];
+
+    expect(updateOP.optionName).toBe("Jeni");
+  });
+
   test("Delete a Options", async () => {
     var agent = request.agent(server);
     await login(agent, "dipu@gmail.com", "dipu");
@@ -644,6 +706,37 @@ describe("Test case for database", () => {
 
     res = await agent.get(`/vote/${election.url}`);
     expect(res.statusCode).toBe(200);
+  });
+
+  test("voter sign out", async () => {
+    var agent = request.agent(server);
+    await login(agent, "dipu@gmail.com", "dipu");
+
+    var res = await agent
+      .get("/listofElection")
+      .set("Accept", "application/json");
+    console.log(res.text);
+    const parseElections = JSON.parse(res.text);
+    const election = parseElections.ele[parseElections.ele.length - 1];
+
+    res = await agent.get(`/launch/${election.url}`);
+    var csrfToken = getCsrfToken(res);
+
+    res = await agent.post(`/sessionVoter/${election.url}`).send({
+      voterID: "666",
+      password: "12345678",
+      _csrf: csrfToken,
+    });
+
+    expect(res.statusCode).toBe(302);
+
+    res = await agent.get(`/vote/${election.url}`);
+    expect(res.statusCode).toBe(200);
+    console.log(res.statusCode);
+    res = await agent.get(`/signout/${election.url}/Voter`);
+    expect(res.statusCode).toBe(302);
+    res = await agent.get(`/vote/${election.url}`);
+    expect(res.statusCode).toBe(302);
   });
 
   test("should end a elction", async () => {
