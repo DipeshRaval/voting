@@ -49,6 +49,8 @@ module.exports = (sequelize, DataTypes) => {
         title: title,
         url: url,
         adminId,
+        launch: false,
+        end: false,
       });
     }
 

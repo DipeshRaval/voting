@@ -14,7 +14,7 @@
 
 - After create a ballot paper admin can add a voter inside a election. For add a voter inside election we have to provide a Voter ID also a Password for voter.
 
-- After adding a voter we can launch a election. When we launch an election then the election will live on public url on which the voter can vote it.
+- After adding a voter we can launch a election. When we launch an election then the election will live on public url on which the voter can vote it by provide a credentials.
 
 - When election is launched at that time admin can not modify a ballot paper but it can add and a modify a voter list.
 
@@ -22,7 +22,9 @@
 
 - After voting is finished admin can end a election when election is end the voter can see the result of an election on a public url.
 
-## Usage
+## Run Locally
+
+- Note : Postgresql service must install in your system.
 
 - Install dependacies
 

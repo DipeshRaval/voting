@@ -49,6 +49,7 @@ module.exports = (sequelize, DataTypes) => {
         voterId,
         password,
         electionId,
+        voted: false,
       });
     }
 

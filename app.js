@@ -261,12 +261,19 @@ app.get(
       const election = await Election.findByPk(req.params.id);
       const que = await Quetion.getQuetions(req.params.id);
       const voters = await Voter.getVoters(req.params.id);
-      res.render("display", {
-        election,
-        que,
-        totalVoter: voters.length,
-        csrfToken: req.csrfToken(),
-      });
+      if (req.accepts("html")) {
+        res.render("display", {
+          election,
+          que,
+          totalVoter: voters.length,
+          csrfToken: req.csrfToken(),
+        });
+      } else {
+        res.json({
+          election,
+          que,
+        });
+      }
     } catch (err) {
       console.log(err);
       return res.status(422).json(err);

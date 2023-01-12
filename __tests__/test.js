@@ -480,4 +480,190 @@ describe("Test case for database", () => {
 
     expect(res.statusCode).toBe(200);
   });
+
+  test("Launch a election", async () => {
+    var agent = request.agent(server);
+    await login(agent, "dipu@gmail.com", "dipu");
+    var res = await agent.get("/listofElection");
+    var csrfToken = getCsrfToken(res);
+    await agent.post("/election").send({
+      title: "Launch test Election",
+      url: "launchUrl",
+      _csrf: csrfToken,
+    });
+
+    res = await agent.get("/listofElection").set("Accept", "application/json");
+    console.log(res.text);
+    const parseElections = JSON.parse(res.text);
+    const election = parseElections.ele[parseElections.ele.length - 1];
+
+    res = await agent.get(`/election/${election.id}/addQuetion`);
+    csrfToken = getCsrfToken(res);
+
+    await agent.post(`/addquetion/${election.id}`).send({
+      title: "WHich animal is Big",
+      desc: "Select an animal which biger than every animals",
+      _csrf: csrfToken,
+    });
+
+    res = await agent
+      .get(`/election/${election.id}/addQuetion`)
+      .set("Accept", "application/json");
+    var quetions = JSON.parse(res.text);
+    const totalQuetions = quetions.que.length;
+    const que = quetions.que[totalQuetions - 1];
+
+    res = await agent.get(
+      `/election/${election.id}/quetion/${que.id}/addOptions`
+    );
+    csrfToken = getCsrfToken(res);
+
+    await agent
+      .post(`/election/${election.id}/quetion/${que.id}/addOptions`)
+      .send({
+        name: "Tiger",
+        qid: que.id,
+        _csrf: csrfToken,
+      });
+
+    res = await agent.get(
+      `/election/${election.id}/quetion/${que.id}/addOptions`
+    );
+    csrfToken = getCsrfToken(res);
+
+    await agent
+      .post(`/election/${election.id}/quetion/${que.id}/addOptions`)
+      .send({
+        name: "WOlf",
+        qid: que.id,
+        _csrf: csrfToken,
+      });
+
+    res = await agent.get(
+      `/election/${election.id}/quetion/${que.id}/addOptions`
+    );
+    csrfToken = getCsrfToken(res);
+
+    await agent.post(`/addquetion/${election.id}`).send({
+      title: "Which teacher is bad ?",
+      desc: "Select teacher which you notlike it for remove them...",
+      _csrf: csrfToken,
+    });
+
+    res = await agent
+      .get(`/election/${election.id}/addQuetion`)
+      .set("Accept", "application/json");
+    quetions = JSON.parse(res.text);
+    var quetionsList = quetions.que.length;
+    const newque = quetions.que[quetionsList - 1];
+
+    res = await agent.get(
+      `/election/${election.id}/quetion/${newque.id}/addOptions`
+    );
+    csrfToken = getCsrfToken(res);
+
+    await agent
+      .post(`/election/${election.id}/quetion/${newque.id}/addOptions`)
+      .send({
+        name: "HMP",
+        qid: newque.id,
+        _csrf: csrfToken,
+      });
+
+    res = await agent.get(
+      `/election/${election.id}/quetion/${newque.id}/addOptions`
+    );
+    csrfToken = getCsrfToken(res);
+
+    await agent
+      .post(`/election/${election.id}/quetion/${newque.id}/addOptions`)
+      .send({
+        name: "DDD",
+        qid: newque.id,
+        _csrf: csrfToken,
+      });
+
+    res = await agent.get(`/election/${election.id}/voter`);
+    csrfToken = getCsrfToken(res);
+
+    await agent.post(`/election/${election.id}/addvoter`).send({
+      voterId: "444",
+      password: "12345678",
+      _csrf: csrfToken,
+    });
+
+    res = await agent.get(`/election/${election.id}/voter`);
+    csrfToken = getCsrfToken(res);
+
+    await agent.post(`/election/${election.id}/addvoter`).send({
+      voterId: "555",
+      password: "12345678",
+      _csrf: csrfToken,
+    });
+
+    res = await agent.get(`/election/${election.id}/voter`);
+    csrfToken = getCsrfToken(res);
+
+    await agent.post(`/election/${election.id}/addvoter`).send({
+      voterId: "666",
+      password: "12345678",
+      _csrf: csrfToken,
+    });
+
+    res = await agent.get(`/election/${election.id}/launch`);
+
+    res = await agent
+      .get(`/election/${election.id}`)
+      .set("Accept", "application/json");
+    console.log(res.text);
+    var Elections = JSON.parse(res.text);
+    expect(Elections.election.launch).toBe(true);
+  });
+
+  test("should log in a voter", async () => {
+    var agent = request.agent(server);
+    await login(agent, "dipu@gmail.com", "dipu");
+
+    var res = await agent
+      .get("/listofElection")
+      .set("Accept", "application/json");
+    console.log(res.text);
+    const parseElections = JSON.parse(res.text);
+    const election = parseElections.ele[parseElections.ele.length - 1];
+
+    res = await agent.get(`/launch/${election.url}`);
+    var csrfToken = getCsrfToken(res);
+
+    res = await agent.post(`/sessionVoter/${election.url}`).send({
+      voterID: "666",
+      password: "12345678",
+      _csrf: csrfToken,
+    });
+
+    expect(res.statusCode).toBe(302);
+
+    res = await agent.get(`/vote/${election.url}`);
+    expect(res.statusCode).toBe(200);
+  });
+
+  test("should end a elction", async () => {
+    var agent = request.agent(server);
+    await login(agent, "dipu@gmail.com", "dipu");
+
+    var res = await agent
+      .get("/listofElection")
+      .set("Accept", "application/json");
+    console.log(res.text);
+    const parseElections = JSON.parse(res.text);
+    const election = parseElections.ele[parseElections.ele.length - 1];
+
+    res = await agent.get(`/election/${election.id}/end`);
+
+    res = await agent
+      .get(`/election/${election.id}`)
+      .set("Accept", "application/json");
+    console.log(res.text);
+    var Elections = JSON.parse(res.text);
+    expect(Elections.election.end).toBe(true);
+  });
 });
