@@ -57,3 +57,20 @@ npm test
 ```
 
 # ScreenSorts
+
+## Admin Side :
+![Screenshot 2023-01-16 at 12 12 38 PM](https://user-images.githubusercontent.com/103437774/212616881-3b32fe6c-edfb-4e7b-bdae-3e0a50e603e1.png)
+![Screenshot 2023-01-16 at 12 13 30 PM](https://user-images.githubusercontent.com/103437774/212616897-e8eccae4-2e31-40ed-b593-f442d4e31b7f.png)
+![Screenshot 2023-01-16 at 12 13 54 PM](https://user-images.githubusercontent.com/103437774/212616927-9137c14e-6593-480c-8b87-30b8b8b07885.png)
+![Screenshot 2023-01-16 at 12 14 12 PM](https://user-images.githubusercontent.com/103437774/212616950-700dcdb4-c5ad-455c-bd54-286a744a90b4.png)
+![Sc![Screenshot 2023-01-16 at 12 16 01 PM](https://user-images.githubusercontent.com/103437774/212617009-774a9ab1-7a72-4ca0-aa7c-5f1d1f09fcc5.png)
+
+reenshot 2023-01-16 at 12 14 24 PM](https://user-images.githubusercontent.com/103437774/212616971-d74f5b6d-bb6e-4762-8f98-720eaf14b337.png)
+![Screenshot 2023-01-16 at 12 16 06 PM](https://user-images.githubusercontent.com/103437774/212617118-c604c2b6-23c8-4f68-8c1f-0b3a35e5b7b0.png)
+![Screenshot 2023-01-16 at 12 14 49 PM](https://user-images.githubusercontent.com/103437774/212617133-997b76c8-01c4-46d2-a98b-d3e50481f603.png)
+![Screenshot 2023-01-16 at 12 14 30 PM](https://user-images.githubusercontent.com/103437774/212617146-097b7d41-8241-4422-bee6-6aeaaedad3b7.png)
+![Screenshot 2023-01-16 at 12 14 42 PM](https://user-images.githubusercontent.com/103437774/212617169-c8d1a7ca-d601-43d7-8f85-2498524b8022.png)
+
+
+
+
