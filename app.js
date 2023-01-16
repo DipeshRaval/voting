@@ -182,7 +182,7 @@ app.get(
         });
       }
     } else {
-      res.redirect("/");
+      return res.redirect("/");
     }
   }
 );
@@ -193,231 +193,39 @@ app.post(
   async (req, res) => {
     console.log(req.body);
     console.log(req.params.id);
-
-    if (req.body.title.trim().length <= 5) {
-      req.flash("error", "Title length must grater than 5");
-      return res.redirect(`/election/${req.params.id}/addQuetion`);
-    }
-    if (req.body.desc.length === 0) {
-      req.flash("error", "Description Cann't be empty..");
-      return res.redirect(`/election/${req.params.id}/addQuetion`);
-    }
-    if (req.body.desc.length <= 15) {
-      req.flash("error", "Description length must grater than 15");
-      return res.redirect(`/election/${req.params.id}/addQuetion`);
-    }
-    try {
-      const Que = await Quetion.addQuetion({
-        title: req.body.title,
-        description: req.body.desc,
-        electionID: req.params.id,
-      });
-      res.redirect(`/election/${req.params.id}/quetion/${Que.id}/addOptions`);
-    } catch (error) {
-      console.log(error);
-      return res.status(422).json(error);
+    if (req.user.role == "admin") {
+      if (req.body.title.trim().length <= 5) {
+        req.flash("error", "Title length must grater than 5");
+        return res.redirect(`/election/${req.params.id}/addQuetion`);
+      }
+      if (req.body.desc.length === 0) {
+        req.flash("error", "Description Cann't be empty..");
+        return res.redirect(`/election/${req.params.id}/addQuetion`);
+      }
+      if (req.body.desc.length <= 15) {
+        req.flash("error", "Description length must grater than 15");
+        return res.redirect(`/election/${req.params.id}/addQuetion`);
+      }
+      try {
+        const Que = await Quetion.addQuetion({
+          title: req.body.title,
+          description: req.body.desc,
+          electionID: req.params.id,
+        });
+        res.redirect(`/election/${req.params.id}/quetion/${Que.id}/addOptions`);
+      } catch (error) {
+        console.log(error);
+        return res.status(422).json(error);
+      }
+    } else {
+      return res.redirect("/");
     }
   }
 );
 
 app.post("/election", connectEnsureLogin.ensureLoggedIn(), async (req, res) => {
   console.log(req.body);
-  if (req.body.title.trim().length < 5) {
-    req.flash("error", "election name length must grater than 5");
-    return res.redirect("/listOfElection");
-  }
-  if (req.body.url.length === 0) {
-    req.flash("error", "Url Cann't be empty..");
-    return res.redirect("/listOfElection");
-  }
-  try {
-    await Election.addElection({
-      title: req.body.title,
-      url: req.body.url,
-      adminId: req.user.id,
-    });
-    res.redirect("/listOfElection");
-  } catch (error) {
-    console.log(error);
-    if (error.name == "SequelizeUniqueConstraintError") {
-      error.errors.forEach((e) => {
-        if (e.message == "url must be unique") {
-          req.flash("error", "Url used before so provide anothor one.");
-        }
-      });
-      return res.redirect("/listOfElection");
-    } else {
-      return res.status(422).json(error);
-    }
-  }
-});
-
-app.get(
-  "/election/:id",
-  connectEnsureLogin.ensureLoggedIn(),
-  async (req, res) => {
-    console.log(req.params.id);
-    try {
-      const election = await Election.findByPk(req.params.id);
-      const que = await Quetion.getQuetions(req.params.id);
-      const voters = await Voter.getVoters(req.params.id);
-      if (req.accepts("html")) {
-        res.render("display", {
-          election,
-          que,
-          totalVoter: voters.length,
-          csrfToken: req.csrfToken(),
-        });
-      } else {
-        res.json({
-          election,
-          que,
-        });
-      }
-    } catch (err) {
-      console.log(err);
-      return res.status(422).json(err);
-    }
-  }
-);
-
-app.get(
-  "/election/:id/addQuetion",
-  connectEnsureLogin.ensureLoggedIn(),
-  async (req, res) => {
-    console.log(req.params.id);
-    try {
-      const election = await Election.findByPk(req.params.id);
-
-      if (election.launch) {
-        req.flash("error", "ELection is live so ypu cann't chnage ballot");
-        return res.redirect(`/election/${election.id}`);
-      }
-
-      const que = await Quetion.getQuetions(req.params.id);
-      if (req.accepts("html")) {
-        res.render("quetion", {
-          election,
-          que,
-          csrfToken: req.csrfToken(),
-        });
-      } else {
-        res.json({
-          election,
-          que,
-        });
-      }
-    } catch (err) {
-      console.log(err);
-      return res.status(422).json(err);
-    }
-  }
-);
-
-app.get(
-  "/election/:eId/quetion/:qId/addOptions",
-  connectEnsureLogin.ensureLoggedIn(),
-  async (req, res) => {
-    const election = await Election.findByPk(req.params.eId);
-    const quetion = await Quetion.findByPk(req.params.qId);
-    const Options = await Option.getOptions(req.params.qId);
-    if (req.accepts("html")) {
-      return res.render("options", {
-        Options,
-        quetion,
-        election,
-        csrfToken: req.csrfToken(),
-      });
-    } else {
-      res.json({
-        Options,
-        quetion,
-        election,
-      });
-    }
-  }
-);
-
-app.post(
-  "/election/:eId/quetion/:qId/addOptions",
-  connectEnsureLogin.ensureLoggedIn(),
-  async (req, res) => {
-    if (req.body.name.length === 0) {
-      req.flash("error", "Option value cann't be empty !!!");
-      return res.redirect(
-        `/election/${req.params.eId}/quetion/${req.params.qId}/addOptions`
-      );
-    }
-    try {
-      await Option.addOption({
-        optionName: req.body.name,
-        queid: req.body.qid,
-      });
-      res.redirect(
-        `/election/${req.params.eId}/quetion/${req.params.qId}/addOptions`
-      );
-    } catch (err) {
-      console.log(err);
-      return res.status(422).json(err);
-    }
-  }
-);
-
-app.delete(
-  "/delElection/:id",
-  connectEnsureLogin.ensureLoggedIn(),
-  async (req, res) => {
-    const election = await Election.findByPk(req.params.id);
-    if (election.launch === false) {
-      console.log("We are delete a election with ID: ", req.params.id);
-      try {
-        const affectedRow = await Election.remove(req.params.id, req.user.id);
-        res.send(affectedRow ? true : false);
-      } catch (error) {
-        console.log(error);
-        return res.status(422).json(error);
-      }
-    } else {
-      req.flash("error", "Election is live so you cann't delete it");
-      return res.redirect(`/listOfElection`);
-    }
-  }
-);
-
-app.delete(
-  "/election/:eid/delQuetion/:id",
-  connectEnsureLogin.ensureLoggedIn(),
-  async (req, res) => {
-    console.log("We are delete a quetion with ID: ", req.params.id);
-    try {
-      const affectedRow = await Quetion.remove(req.params.id);
-      res.send(affectedRow ? true : false);
-    } catch (error) {
-      console.log(error);
-      return res.status(422).json(error);
-    }
-  }
-);
-
-app.delete(
-  "/election/:eid/delOption/:id",
-  connectEnsureLogin.ensureLoggedIn(),
-  async (req, res) => {
-    console.log("We are delete a option with ID: ", req.params.id);
-    try {
-      const affectedRow = await Option.remove(req.params.id);
-      res.send(affectedRow ? true : false);
-    } catch (error) {
-      console.log(error);
-      return res.status(422).json(error);
-    }
-  }
-);
-
-app.post(
-  "/modify/election/:id",
-  connectEnsureLogin.ensureLoggedIn(),
-  async (req, res) => {
+  if (req.user.role == "admin") {
     if (req.body.title.trim().length < 5) {
       req.flash("error", "election name length must grater than 5");
       return res.redirect("/listOfElection");
@@ -427,15 +235,14 @@ app.post(
       return res.redirect("/listOfElection");
     }
     try {
-      await Election.updateElection({
-        id: req.params.id,
+      await Election.addElection({
         title: req.body.title,
         url: req.body.url,
         adminId: req.user.id,
       });
-      req.flash("success", "Election modified successfully!!!");
       res.redirect("/listOfElection");
     } catch (error) {
+      console.log(error);
       if (error.name == "SequelizeUniqueConstraintError") {
         error.errors.forEach((e) => {
           if (e.message == "url must be unique") {
@@ -444,9 +251,241 @@ app.post(
         });
         return res.redirect("/listOfElection");
       } else {
+        return res.status(422).json(error);
+      }
+    }
+  } else {
+    return res.redirect("/");
+  }
+});
+
+app.get(
+  "/election/:id",
+  connectEnsureLogin.ensureLoggedIn(),
+  async (req, res) => {
+    if (req.user.role == "admin") {
+      console.log(req.params.id);
+      try {
+        const election = await Election.findByPk(req.params.id);
+        const que = await Quetion.getQuetions(req.params.id);
+        const voters = await Voter.getVoters(req.params.id);
+        if (req.accepts("html")) {
+          res.render("display", {
+            election,
+            que,
+            totalVoter: voters.length,
+            csrfToken: req.csrfToken(),
+          });
+        } else {
+          res.json({
+            election,
+            que,
+          });
+        }
+      } catch (err) {
+        console.log(err);
+        return res.status(422).json(err);
+      }
+    } else {
+      return res.redirect("/");
+    }
+  }
+);
+
+app.get(
+  "/election/:id/addQuetion",
+  connectEnsureLogin.ensureLoggedIn(),
+  async (req, res) => {
+    if (req.user.role == "admin") {
+      console.log(req.params.id);
+      try {
+        const election = await Election.findByPk(req.params.id);
+
+        if (election.launch) {
+          req.flash("error", "ELection is live so ypu cann't chnage ballot");
+          return res.redirect(`/election/${election.id}`);
+        }
+
+        const que = await Quetion.getQuetions(req.params.id);
+        if (req.accepts("html")) {
+          res.render("quetion", {
+            election,
+            que,
+            csrfToken: req.csrfToken(),
+          });
+        } else {
+          res.json({
+            election,
+            que,
+          });
+        }
+      } catch (err) {
+        console.log(err);
+        return res.status(422).json(err);
+      }
+    } else {
+      return res.redirect("/");
+    }
+  }
+);
+
+app.get(
+  "/election/:eId/quetion/:qId/addOptions",
+  connectEnsureLogin.ensureLoggedIn(),
+  async (req, res) => {
+    if (req.user.role == "admin") {
+      const election = await Election.findByPk(req.params.eId);
+      const quetion = await Quetion.findByPk(req.params.qId);
+      const Options = await Option.getOptions(req.params.qId);
+      if (req.accepts("html")) {
+        return res.render("options", {
+          Options,
+          quetion,
+          election,
+          csrfToken: req.csrfToken(),
+        });
+      } else {
+        res.json({
+          Options,
+          quetion,
+          election,
+        });
+      }
+    } else {
+      return res.redirect("/");
+    }
+  }
+);
+
+app.post(
+  "/election/:eId/quetion/:qId/addOptions",
+  connectEnsureLogin.ensureLoggedIn(),
+  async (req, res) => {
+    if (req.user.role == "admin") {
+      if (req.body.name.length === 0) {
+        req.flash("error", "Option value cann't be empty !!!");
+        return res.redirect(
+          `/election/${req.params.eId}/quetion/${req.params.qId}/addOptions`
+        );
+      }
+      try {
+        await Option.addOption({
+          optionName: req.body.name,
+          queid: req.body.qid,
+        });
+        res.redirect(
+          `/election/${req.params.eId}/quetion/${req.params.qId}/addOptions`
+        );
+      } catch (err) {
+        console.log(err);
+        return res.status(422).json(err);
+      }
+    } else {
+      return res.redirect("/");
+    }
+  }
+);
+
+app.delete(
+  "/delElection/:id",
+  connectEnsureLogin.ensureLoggedIn(),
+  async (req, res) => {
+    if (req.user.role == "admin") {
+      const election = await Election.findByPk(req.params.id);
+      if (election.launch === false) {
+        console.log("We are delete a election with ID: ", req.params.id);
+        try {
+          const affectedRow = await Election.remove(req.params.id, req.user.id);
+          res.send(affectedRow ? true : false);
+        } catch (error) {
+          console.log(error);
+          return res.status(422).json(error);
+        }
+      } else {
+        req.flash("error", "Election is live so you cann't delete it");
+        return res.redirect(`/listOfElection`);
+      }
+    } else {
+      return res.redirect("/");
+    }
+  }
+);
+
+app.delete(
+  "/election/:eid/delQuetion/:id",
+  connectEnsureLogin.ensureLoggedIn(),
+  async (req, res) => {
+    if (req.user.role == "admin") {
+      console.log("We are delete a quetion with ID: ", req.params.id);
+      try {
+        const affectedRow = await Quetion.remove(req.params.id);
+        res.send(affectedRow ? true : false);
+      } catch (error) {
         console.log(error);
         return res.status(422).json(error);
       }
+    } else {
+      return res.redirect("/");
+    }
+  }
+);
+
+app.delete(
+  "/election/:eid/delOption/:id",
+  connectEnsureLogin.ensureLoggedIn(),
+  async (req, res) => {
+    if (req.user.role == "admin") {
+      console.log("We are delete a option with ID: ", req.params.id);
+      try {
+        const affectedRow = await Option.remove(req.params.id);
+        res.send(affectedRow ? true : false);
+      } catch (error) {
+        console.log(error);
+        return res.status(422).json(error);
+      }
+    } else {
+      return res.redirect("/");
+    }
+  }
+);
+
+app.post(
+  "/modify/election/:id",
+  connectEnsureLogin.ensureLoggedIn(),
+  async (req, res) => {
+    if (req.user.role == "admin") {
+      if (req.body.title.trim().length < 5) {
+        req.flash("error", "election name length must grater than 5");
+        return res.redirect("/listOfElection");
+      }
+      if (req.body.url.length === 0) {
+        req.flash("error", "Url Cann't be empty..");
+        return res.redirect("/listOfElection");
+      }
+      try {
+        await Election.updateElection({
+          id: req.params.id,
+          title: req.body.title,
+          url: req.body.url,
+          adminId: req.user.id,
+        });
+        req.flash("success", "Election modified successfully!!!");
+        res.redirect("/listOfElection");
+      } catch (error) {
+        if (error.name == "SequelizeUniqueConstraintError") {
+          error.errors.forEach((e) => {
+            if (e.message == "url must be unique") {
+              req.flash("error", "Url used before so provide anothor one.");
+            }
+          });
+          return res.redirect("/listOfElection");
+        } else {
+          console.log(error);
+          return res.status(422).json(error);
+        }
+      }
+    } else {
+      return res.redirect("/");
     }
   }
 );
@@ -455,29 +494,33 @@ app.post(
   "/modify/:eid/quetion/:id",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
-    if (req.body.title.trim().length <= 5) {
-      req.flash("error", "Title length must grater than 5");
-      return res.redirect(`/election/${req.params.eid}/addQuetion`);
-    }
-    if (req.body.desc.length === 0) {
-      req.flash("error", "Description Cann't be empty..");
-      return res.redirect(`/election/${req.params.eid}/addQuetion`);
-    }
-    if (req.body.desc.length <= 15) {
-      req.flash("error", "Description length must grater than 15");
-      return res.redirect(`/election/${req.params.eid}/addQuetion`);
-    }
-    try {
-      await Quetion.updateQuetion({
-        id: req.params.id,
-        title: req.body.title,
-        description: req.body.desc,
-      });
-      req.flash("success", "Quetion modified successfully!!!");
-      return res.redirect(`/election/${req.params.eid}/addQuetion`);
-    } catch (error) {
-      console.log(error);
-      return res.status(422).json(error);
+    if (req.user.role == "admin") {
+      if (req.body.title.trim().length <= 5) {
+        req.flash("error", "Title length must grater than 5");
+        return res.redirect(`/election/${req.params.eid}/addQuetion`);
+      }
+      if (req.body.desc.length === 0) {
+        req.flash("error", "Description Cann't be empty..");
+        return res.redirect(`/election/${req.params.eid}/addQuetion`);
+      }
+      if (req.body.desc.length <= 15) {
+        req.flash("error", "Description length must grater than 15");
+        return res.redirect(`/election/${req.params.eid}/addQuetion`);
+      }
+      try {
+        await Quetion.updateQuetion({
+          id: req.params.id,
+          title: req.body.title,
+          description: req.body.desc,
+        });
+        req.flash("success", "Quetion modified successfully!!!");
+        return res.redirect(`/election/${req.params.eid}/addQuetion`);
+      } catch (error) {
+        console.log(error);
+        return res.status(422).json(error);
+      }
+    } else {
+      return res.redirect("/");
     }
   }
 );
@@ -486,36 +529,34 @@ app.post(
   "/election/:eId/quetion/:qId/option/:id/modify",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
-    const election = await Election.findByPk(req.params.eId);
-    if (req.body.optionName.length === 0) {
-      req.flash("error", "Option value cann't be empty !!!");
-      return res.redirect(
-        `/election/${req.params.eId}/quetion/${req.params.qId}/addOptions`
-      );
-    }
-    if (election.launch === false) {
-      try {
-        const option = await Option.findByPk(req.params.id);
-        const update = await option.updating(req.body.optionName);
-
-        // const out = await Option.updateOption({
-        //   id: req.params.id,
-        //   optionName: req.body.optionName,
-        // });
-        // console.log(out);
-
-        console.log(update);
-        req.flash("success", "Option modified successfully!!!");
-        res.redirect(
+    if (req.user.role == "admin") {
+      const election = await Election.findByPk(req.params.eId);
+      if (req.body.optionName.length === 0) {
+        req.flash("error", "Option value cann't be empty !!!");
+        return res.redirect(
           `/election/${req.params.eId}/quetion/${req.params.qId}/addOptions`
         );
-      } catch (error) {
-        console.log(error);
-        return res.status(422).json(error);
+      }
+      if (election.launch === false) {
+        try {
+          const option = await Option.findByPk(req.params.id);
+          const update = await option.updating(req.body.optionName);
+
+          console.log(update);
+          req.flash("success", "Option modified successfully!!!");
+          res.redirect(
+            `/election/${req.params.eId}/quetion/${req.params.qId}/addOptions`
+          );
+        } catch (error) {
+          console.log(error);
+          return res.status(422).json(error);
+        }
+      } else {
+        req.flash("error", "Election is live so you cann't modify ballot");
+        return res.redirect(`/election/${req.params.eId}`);
       }
     } else {
-      req.flash("error", "Election is live so you cann't modify ballot");
-      return res.redirect(`/election/${req.params.eId}`);
+      return res.redirect("/");
     }
   }
 );
@@ -524,25 +565,29 @@ app.get(
   "/election/:eid/preview",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
-    try {
-      const election = await Election.findByPk(req.params.eid);
-      const quetions = await Quetion.getQuetions(req.params.eid);
-      const options = [];
+    if (req.user.role == "admin") {
+      try {
+        const election = await Election.findByPk(req.params.eid);
+        const quetions = await Quetion.getQuetions(req.params.eid);
+        const options = [];
 
-      for (let i = 0; i < quetions.length; i++) {
-        const op = await Option.getOptions(quetions[i].id);
-        options.push(op);
+        for (let i = 0; i < quetions.length; i++) {
+          const op = await Option.getOptions(quetions[i].id);
+          options.push(op);
+        }
+
+        res.render("preview", {
+          election,
+          quetions,
+          options,
+          csrfToken: req.csrfToken(),
+        });
+      } catch (error) {
+        console.log(error);
+        return res.status(422).json(error);
       }
-
-      res.render("preview", {
-        election,
-        quetions,
-        options,
-        csrfToken: req.csrfToken(),
-      });
-    } catch (error) {
-      console.log(error);
-      return res.status(422).json(error);
+    } else {
+      return res.redirect("/");
     }
   }
 );
@@ -551,17 +596,21 @@ app.get(
   "/election/:eid/voter",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
-    const voters = await Voter.getVoters(req.params.eid);
-    if (req.accepts("html")) {
-      res.render("voter", {
-        electionID: req.params.eid,
-        voters,
-        csrfToken: req.csrfToken(),
-      });
+    if (req.user.role == "admin") {
+      const voters = await Voter.getVoters(req.params.eid);
+      if (req.accepts("html")) {
+        res.render("voter", {
+          electionID: req.params.eid,
+          voters,
+          csrfToken: req.csrfToken(),
+        });
+      } else {
+        res.json({
+          voters,
+        });
+      }
     } else {
-      res.json({
-        voters,
-      });
+      return res.redirect("/");
     }
   }
 );
@@ -570,40 +619,44 @@ app.post(
   "/election/:eid/addvoter",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
-    if (req.body.voterId.trim().length < 3) {
-      req.flash("error", "Voter ID must grater than 2!!");
-      return res.redirect(`/election/${req.params.eid}/voter`);
-    }
-    if (req.body.password.length === 0) {
-      req.flash("error", "Password can not be empty !!");
-      return res.redirect(`/election/${req.params.eid}/voter`);
-    }
-    if (req.body.password.length <= 5) {
-      req.flash("error", "Password must grater than 5 !!");
-      return res.redirect(`/election/${req.params.eid}/voter`);
-    }
-
-    const pwd = await bcrypt.hash(req.body.password, saltRound);
-    try {
-      await Voter.addVoter({
-        voterId: req.body.voterId,
-        password: pwd,
-        electionId: req.params.eid,
-      });
-
-      res.redirect(`/election/${req.params.eid}/voter`);
-    } catch (error) {
-      if (error.name == "SequelizeUniqueConstraintError") {
-        error.errors.forEach((e) => {
-          if (e.message == "voterId must be unique") {
-            req.flash("error", "Voter with this VoterId already exists");
-          }
-        });
+    if (req.user.role == "admin") {
+      if (req.body.voterId.trim().length < 3) {
+        req.flash("error", "Voter ID must grater than 2!!");
         return res.redirect(`/election/${req.params.eid}/voter`);
-      } else {
-        console.log(error);
-        return res.status(422).json(error);
       }
+      if (req.body.password.length === 0) {
+        req.flash("error", "Password can not be empty !!");
+        return res.redirect(`/election/${req.params.eid}/voter`);
+      }
+      if (req.body.password.length <= 5) {
+        req.flash("error", "Password must grater than 5 !!");
+        return res.redirect(`/election/${req.params.eid}/voter`);
+      }
+
+      const pwd = await bcrypt.hash(req.body.password, saltRound);
+      try {
+        await Voter.addVoter({
+          voterId: req.body.voterId,
+          password: pwd,
+          electionId: req.params.eid,
+        });
+
+        res.redirect(`/election/${req.params.eid}/voter`);
+      } catch (error) {
+        if (error.name == "SequelizeUniqueConstraintError") {
+          error.errors.forEach((e) => {
+            if (e.message == "voterId must be unique") {
+              req.flash("error", "Voter with this VoterId already exists");
+            }
+          });
+          return res.redirect(`/election/${req.params.eid}/voter`);
+        } else {
+          console.log(error);
+          return res.status(422).json(error);
+        }
+      }
+    } else {
+      return res.redirect("/");
     }
   }
 );
@@ -612,13 +665,17 @@ app.delete(
   "/delVoter/:id",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
-    console.log("We are delete a Voter with ID: ", req.params.id);
-    try {
-      const affectedRow = await Voter.remove(req.params.id);
-      res.send(affectedRow ? true : false);
-    } catch (error) {
-      console.log(error);
-      return res.status(422).json(error);
+    if (req.user.role == "admin") {
+      console.log("We are delete a Voter with ID: ", req.params.id);
+      try {
+        const affectedRow = await Voter.remove(req.params.id);
+        res.send(affectedRow ? true : false);
+      } catch (error) {
+        console.log(error);
+        return res.status(422).json(error);
+      }
+    } else {
+      return res.redirect("/");
     }
   }
 );
@@ -627,25 +684,29 @@ app.post(
   "/election/:eid/modify/voter/:id",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
-    if (req.body.pwd.length === 0) {
-      req.flash("error", "Password can not be empty !!");
-      return res.redirect(`/election/${req.params.eid}/voter`);
-    }
-    if (req.body.pwd.length <= 5) {
-      req.flash("error", "Password must grater than 5 !!");
-      return res.redirect(`/election/${req.params.eid}/voter`);
-    }
-    try {
-      const voter = await Voter.findByPk(req.params.id);
-      const pwd = await bcrypt.hash(req.body.pwd, saltRound);
+    if (req.user.role == "admin") {
+      if (req.body.pwd.length === 0) {
+        req.flash("error", "Password can not be empty !!");
+        return res.redirect(`/election/${req.params.eid}/voter`);
+      }
+      if (req.body.pwd.length <= 5) {
+        req.flash("error", "Password must grater than 5 !!");
+        return res.redirect(`/election/${req.params.eid}/voter`);
+      }
+      try {
+        const voter = await Voter.findByPk(req.params.id);
+        const pwd = await bcrypt.hash(req.body.pwd, saltRound);
 
-      await voter.updateVoter(pwd);
+        await voter.updateVoter(pwd);
 
-      req.flash("success", "Voter modified successfully!!!");
-      res.redirect(`/election/${req.params.eid}/voter`);
-    } catch (error) {
-      console.log(error);
-      return res.status(422).json(error);
+        req.flash("success", "Voter modified successfully!!!");
+        res.redirect(`/election/${req.params.eid}/voter`);
+      } catch (error) {
+        console.log(error);
+        return res.status(422).json(error);
+      }
+    } else {
+      return res.redirect("/");
     }
   }
 );
@@ -654,54 +715,58 @@ app.get(
   "/election/:eid/launch",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
-    const election = await Election.findByPk(req.params.eid);
-    const quetions = await Quetion.getQuetions(req.params.eid);
-    const voters = await Voter.getVoters(req.params.eid);
+    if (req.user.role == "admin") {
+      const election = await Election.findByPk(req.params.eid);
+      const quetions = await Quetion.getQuetions(req.params.eid);
+      const voters = await Voter.getVoters(req.params.eid);
 
-    if (quetions.length < 2) {
-      req.flash("error", "Add A more than two quetion in ballot for launch");
-      return res.redirect(`/election/${req.params.eid}`);
-    }
-    if (voters.length < 3) {
-      req.flash("error", "Election must contain more than 2 voter!!");
-      return res.redirect(`/election/${req.params.eid}`);
-    }
-
-    let bool = false;
-
-    const options = [];
-
-    for (let i = 0; i < quetions.length; i++) {
-      const op = await Option.getOptions(quetions[i].id);
-      options.push(op);
-    }
-
-    for (let i = 0; i < options.length; i++) {
-      if (options[i].length < 2) {
-        console.log("length : ", options[i].length);
-        console.log("options array :", options[i]);
-        console.log("i = ", i);
-        bool = true;
+      if (quetions.length < 2) {
+        req.flash("error", "Add A more than two quetion in ballot for launch");
+        return res.redirect(`/election/${req.params.eid}`);
       }
-    }
+      if (voters.length < 3) {
+        req.flash("error", "Election must contain more than 2 voter!!");
+        return res.redirect(`/election/${req.params.eid}`);
+      }
 
-    if (bool) {
-      req.flash(
-        "error",
-        "Each quetion in ballot must contain more than one option !!"
-      );
-      return res.redirect(`/election/${req.params.eid}`);
-    }
+      let bool = false;
 
-    try {
-      console.log(election);
-      const ele = await election.launchElection();
-      console.log(ele);
-      console.log("Helo");
-      res.redirect(`/election/${req.params.eid}`);
-    } catch (error) {
-      console.log(error);
-      return res.status(422).json(error);
+      const options = [];
+
+      for (let i = 0; i < quetions.length; i++) {
+        const op = await Option.getOptions(quetions[i].id);
+        options.push(op);
+      }
+
+      for (let i = 0; i < options.length; i++) {
+        if (options[i].length < 2) {
+          console.log("length : ", options[i].length);
+          console.log("options array :", options[i]);
+          console.log("i = ", i);
+          bool = true;
+        }
+      }
+
+      if (bool) {
+        req.flash(
+          "error",
+          "Each quetion in ballot must contain more than one option !!"
+        );
+        return res.redirect(`/election/${req.params.eid}`);
+      }
+
+      try {
+        console.log(election);
+        const ele = await election.launchElection();
+        console.log(ele);
+        console.log("Helo");
+        res.redirect(`/election/${req.params.eid}`);
+      } catch (error) {
+        console.log(error);
+        return res.status(422).json(error);
+      }
+    } else {
+      return res.redirect("/");
     }
   }
 );
@@ -710,18 +775,22 @@ app.get(
   "/election/:eid/end",
   connectEnsureLogin.ensureLoggedIn(),
   async (req, res) => {
-    const election = await Election.findByPk(req.params.eid);
-    if (election.launch) {
-      try {
-        await election.endElection();
+    if (req.user.role == "admin") {
+      const election = await Election.findByPk(req.params.eid);
+      if (election.launch) {
+        try {
+          await election.endElection();
+          return res.redirect(`/election/${req.params.eid}`);
+        } catch (error) {
+          console.log(error);
+          return res.status(422).json(error);
+        }
+      } else {
+        req.flash("error", "Election is not live yet!! so cann't end election");
         return res.redirect(`/election/${req.params.eid}`);
-      } catch (error) {
-        console.log(error);
-        return res.status(422).json(error);
       }
     } else {
-      req.flash("error", "Election is not live yet!! so cann't end election");
-      return res.redirect(`/election/${req.params.eid}`);
+      return res.redirect("/");
     }
   }
 );
@@ -748,96 +817,102 @@ app.post(
 );
 
 app.get("/vote/:url", async (req, res) => {
-  const election = await Election.findElectionByUrl(req.params.url);
-  if (election.launch === false && election.end === false) {
-    req.flash("error", "Election is not live so you can't vote on it.");
-    return res.redirect(`/launch/${req.params.url}`);
-  }
+  // console.log(req.user.role);
   if (req.user === undefined) {
     req.flash("error", "Please Login First");
     return res.redirect(`/launch/${req.params.url}`);
   }
-  try {
-    if (req.user.electionId != election.id) {
-      req.flash(
-        "error",
-        "You Can't vote in this election beacuse you didn.t added in this election"
-      );
+  if (req.user.role === "voter") {
+    const election = await Election.findElectionByUrl(req.params.url);
+    if (election.launch === false && election.end === false) {
+      req.flash("error", "Election is not live so you can't vote on it.");
       return res.redirect(`/launch/${req.params.url}`);
     }
-    if (req.user.role === "voter") {
-      if (req.user.voted === false && election.launch) {
-        const quetions = await Quetion.getQuetions(election.id);
-        const options = [];
-
-        for (let i = 0; i < quetions.length; i++) {
-          const op = await Option.getOptions(quetions[i].id);
-          options.push(op);
-        }
-
-        return res.render("vote", {
-          election,
-          quetions,
-          options,
-          csrfToken: req.csrfToken(),
-        });
-      } else if (election.end && req.user.voted) {
-        const quetions = await Quetion.getQuetions(election.id);
-        const optionList = [];
-        const Votes = [];
-        const quetionId = [];
-        const voterVotePerQuetion = [];
-
-        for (let i = 0; i < quetions.length; i++) {
-          quetionId.push(quetions[i].id);
-          const options = await Option.getOptions(quetions[i].id);
-          let optionNames = [];
-          const voteArray = [];
-          const choise = await Vote.findChoise(
-            election.id,
-            quetions[i].id,
-            req.user.id
-          );
-
-          voterVotePerQuetion.push(choise.voteVal);
-
-          for (let j = 0; j < options.length; j++) {
-            optionNames.push(options[j].optionName);
-            const vote = await Vote.retriveVoteCount(
-              options[j].optionName,
-              election.id,
-              quetions[i].id
-            );
-            voteArray.push(vote.length);
-          }
-          optionList.push(optionNames);
-          Votes.push(voteArray);
-        }
-
-        const votingCount = await Voter.voting(election.id);
-
-        return res.render("resultPage", {
-          election,
-          quetions,
-          quetionId,
-          voterVotePerQuetion,
-          optionList,
-          Votes,
-          votingCount: votingCount.length,
-        });
-      } else if (election.end && req.user.voted === false) {
+    try {
+      if (req.user.electionId != election.id) {
         req.flash(
           "error",
-          "You Can't see the result of election because you are not vote in this election"
+          "You Can't vote in this election beacuse you didn.t added in this election"
         );
         return res.redirect(`/launch/${req.params.url}`);
-      } else {
-        return res.redirect(`/sucessFully/${election.id}/voted`);
       }
+      if (req.user.role === "voter") {
+        if (req.user.voted === false && election.launch) {
+          const quetions = await Quetion.getQuetions(election.id);
+          const options = [];
+
+          for (let i = 0; i < quetions.length; i++) {
+            const op = await Option.getOptions(quetions[i].id);
+            options.push(op);
+          }
+
+          return res.render("vote", {
+            election,
+            quetions,
+            options,
+            csrfToken: req.csrfToken(),
+          });
+        } else if (election.end && req.user.voted) {
+          const quetions = await Quetion.getQuetions(election.id);
+          const optionList = [];
+          const Votes = [];
+          const quetionId = [];
+          const voterVotePerQuetion = [];
+
+          for (let i = 0; i < quetions.length; i++) {
+            quetionId.push(quetions[i].id);
+            const options = await Option.getOptions(quetions[i].id);
+            let optionNames = [];
+            const voteArray = [];
+            const choise = await Vote.findChoise(
+              election.id,
+              quetions[i].id,
+              req.user.id
+            );
+
+            voterVotePerQuetion.push(choise.voteVal);
+
+            for (let j = 0; j < options.length; j++) {
+              optionNames.push(options[j].optionName);
+              const vote = await Vote.retriveVoteCount(
+                options[j].optionName,
+                election.id,
+                quetions[i].id
+              );
+              voteArray.push(vote.length);
+            }
+            optionList.push(optionNames);
+            Votes.push(voteArray);
+          }
+
+          const votingCount = await Voter.voting(election.id);
+
+          return res.render("resultPage", {
+            election,
+            quetions,
+            quetionId,
+            voterVotePerQuetion,
+            optionList,
+            Votes,
+            votingCount: votingCount.length,
+          });
+        } else if (election.end && req.user.voted === false) {
+          req.flash(
+            "error",
+            "You Can't see the result of election because you are not vote in this election"
+          );
+          return res.redirect(`/launch/${req.params.url}`);
+        } else {
+          return res.redirect(`/sucessFully/${election.id}/voted`);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      return res.status(422).json(error);
     }
-  } catch (error) {
-    console.log(error);
-    return res.status(422).json(error);
+  } else {
+    req.flash("please login as a voter.");
+    return res.redirect(`/launch/${req.params.url}`);
   }
 });
 
@@ -938,6 +1013,8 @@ app.get(
         console.log(error);
         return res.status(422).json(error);
       }
+    } else {
+      return res.redirect("/");
     }
   }
 );
