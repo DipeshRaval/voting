@@ -60,7 +60,7 @@ npm run start
 npm test
 ```
 
-# ScreenSorts
+# Screenshots
 
 ## Admin Side :
 ![Screenshot 2023-01-16 at 12 12 38 PM](https://user-images.githubusercontent.com/103437774/212616881-3b32fe6c-edfb-4e7b-bdae-3e0a50e603e1.png)
