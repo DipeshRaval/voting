@@ -4,7 +4,7 @@
 
 - Link -> https://online-voting-kcy6.onrender.com/
 
-## Demonstration of project : 
+## Demonstration of project :
 
 - Link -> https://www.loom.com/share/e51ecd8f534c47a383511dfcf76f0432
 
@@ -63,6 +63,7 @@ npm test
 # Screenshots
 
 ## Admin Side :
+
 ![Screenshot 2023-01-16 at 12 12 38 PM](https://user-images.githubusercontent.com/103437774/212616881-3b32fe6c-edfb-4e7b-bdae-3e0a50e603e1.png)
 ![Screenshot 2023-01-16 at 12 13 30 PM](https://user-images.githubusercontent.com/103437774/212616897-e8eccae4-2e31-40ed-b593-f442d4e31b7f.png)
 ![Screenshot 2023-01-16 at 12 13 54 PM](https://user-images.githubusercontent.com/103437774/212616927-9137c14e-6593-480c-8b87-30b8b8b07885.png)
@@ -77,10 +78,8 @@ npm test
 ![Screenshot 2023-01-16 at 12 14 42 PM](https://user-images.githubusercontent.com/103437774/212617169-c8d1a7ca-d601-43d7-8f85-2498524b8022.png)
 
 # Client Side :
+
 ![Screenshot 2023-01-16 at 12 16 30 PM](https://user-images.githubusercontent.com/103437774/212617955-f7bfeed7-ffa7-44b3-9c35-038817fd0e16.png)
 ![Screenshot 2023-01-16 at 12 18 15 PM](https://user-images.githubusercontent.com/103437774/212618023-94e8f847-4483-46ab-9564-92c400d67306.png)
 ![Screenshot 2023-01-16 at 12 18 23 PM](https://user-images.githubusercontent.com/103437774/212618079-0da95483-950d-4924-845a-9b568f6841e0.png)
 ![Screenshot 2023-01-16 at 12 16 44 PM](https://user-images.githubusercontent.com/103437774/212617969-5050bd76-103e-4e4b-8435-16a43ccaf723.png)
-
-
-
