@@ -65,7 +65,7 @@ jobs:
   deploy-to-render:
     runs-on: ubuntu-latest # Define the operating system for the job
     needs: run-tests
-    if: ${{ needs.run-unit-tests.result == 'success' }} # Condition to run the job only if run-unit-tests job succeeds
+    if: ${{ needs.run-tests.result == 'success' }} # Condition to run the job only if run-unit-tests job succeeds
     steps:
       - name: Trigger Render deployment webhook #trigger deployment webhook
         run: curl -X GET -d '{}' ${{ secrets.RENDER_DEPLOY_HOOK }}
