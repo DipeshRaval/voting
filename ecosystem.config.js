@@ -3,7 +3,7 @@ module.exports = {
     {
       name: "Online Voting System",
       script: "index.js",
-      instances: 6,
+      instances: 5,
       wait_ready: true,
       exec_mode: "cluster",
     },
