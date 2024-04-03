@@ -21,8 +21,10 @@ const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const connectEnsureLogin = require("connect-ensure-login");
 const session = require("express-session");
-const bcrypt = require("bcrypt");
-const saltRound = 10;
+// const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
+// const saltRound = 10;
+var saltRound = bcrypt.genSaltSync(10);
 
 app.use(
   session({
@@ -52,7 +54,8 @@ passport.use(
         .then(async (user) => {
           // console.log(user.email);
           if (user) {
-            const bool = await bcrypt.compare(password, user.password);
+            const bool = await bcrypt.compareSync(password, user.password);
+            // const bool = await bcrypt.compare(password, user.password);
             if (bool) {
               return done(null, user);
             } else {
@@ -633,7 +636,8 @@ app.post(
         return res.redirect(`/election/${req.params.eid}/voter`);
       }
 
-      const pwd = await bcrypt.hash(req.body.password, saltRound);
+      const pwd = bcrypt.hashSync(req.body.password, saltRound);
+      // const pwd = await bcrypt.hash(req.body.password, saltRound);
       try {
         await Voter.addVoter({
           voterId: req.body.voterId,
@@ -695,7 +699,8 @@ app.post(
       }
       try {
         const voter = await Voter.findByPk(req.params.id);
-        const pwd = await bcrypt.hash(req.body.pwd, saltRound);
+        // const pwd = await bcrypt.hash(req.body.pwd, saltRound);
+        const pwd = bcrypt.hashSync(req.body.pwd, saltRound);
 
         await voter.updateVoter(pwd);
 
@@ -1033,7 +1038,9 @@ app.post("/forgot/password", async (req, res) => {
     return res.redirect("/login");
   }
   try {
-    const pwd = await bcrypt.hash(req.body.password, saltRound);
+    // const pwd = await bcrypt.hash(req.body.password, saltRound);
+    const pwd = bcrypt.hashSync(req.body.password, saltRound);
+
     const admin = await Admin.resetPassword(req.body.email, pwd);
     if (admin == 0) {
       req.flash(
@@ -1092,7 +1099,9 @@ app.post("/users", async (req, res) => {
     return res.redirect("/signup");
   }
   console.log("Body : ", req.body.firstName);
-  const pwd = await bcrypt.hash(req.body.password, saltRound);
+  // const pwd = await bcrypt.hash(req.body.password, saltRound);
+  const pwd = bcrypt.hashSync(req.body.password, saltRound);
+
   try {
     const user = await Admin.create({
       firstName: req.body.firstName,
