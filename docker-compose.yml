@@ -17,6 +17,9 @@ services:
       - pg-prod-data:/var/lib/postgresql/data
     env_file:
       - .env
+    # hostname: 127.0.0.1
+    ports:
+      - 5432:5432
     environment:
       POSTGRES_USER: $DEV_USERNAME
       POSTGRES_DB: $DEV_DATABASE
