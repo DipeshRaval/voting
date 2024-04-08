@@ -3,14 +3,12 @@
     "username": "postgres",
     "password": "Drvl@123",
     "database": "wd-voting-dev-new",
-    "host" :"voting-db-1",
     "dialect": "postgres"
   },
   "test": {
     "username": "postgres",
     "password": "Drvl@123",
     "database": "wd-voting-test",
-    "host" :"voting-db-1",
     "dialect": "postgres"
   },
   "production": {
