@@ -1,0 +1,28 @@
+version: "3.8"
+services:
+  app:
+    build:
+      context: .
+      target: dev
+    image: voting:development
+    ports:
+      - 3000:3000
+    env_file:
+      - .env
+    depends_on:
+      - db
+  db:
+    image: postgres:15
+    volumes:
+      - pg-prod-data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    # hostname: 127.0.0.1
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: $DEV_USERNAME
+      POSTGRES_DB: $DEV_DATABASE
+      POSTGRES_PASSWORD: $DEV_PASSWORD
+volumes:
+  pg-prod-data:

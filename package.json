@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "npx pm2 start ecosystem.config.js --no-daemon",
     "start": "node index.js",
     "start:prod": "node index.js",
     "db:create:test": "NODE_ENV=test npx sequelize-cli db:create",
@@ -21,7 +22,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bcrypt": "^5.1.0",
+    "bcryptjs": "^2.4.3",
     "chartjs": "^0.3.24",
     "cheerio": "^1.0.0-rc.12",
     "connect-ensure-login": "^0.1.1",
@@ -45,6 +46,7 @@
     "lint-staged": "^13.1.0",
     "nodemon": "^2.0.20",
     "npm": "^9.2.0",
+    "pm2": "^5.3.1",
     "prettier": "^2.8.1",
     "supertest": "^6.3.3"
   }
