@@ -62,6 +62,23 @@ jobs:
           PORT=3000 npm start &
           sleep 5
 
+  docker:
+    name: Docker image build
+    needs: [run-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_HUB_LOGIN }}" | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+      - name: Build and Push Docker Image
+        run: |
+          cd server
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/prohire:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/prohire:latest
+
   deploy-to-render:
     runs-on: ubuntu-latest # Define the operating system for the job
     needs: run-tests
