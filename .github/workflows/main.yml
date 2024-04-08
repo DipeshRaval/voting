@@ -75,7 +75,6 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          cd server
           docker build -t ${{ secrets.DOCKER_USERNAME }}/voting:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/voting:latest
 
