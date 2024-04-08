@@ -83,10 +83,11 @@ jobs:
         context: .
         push: true
         tags: ${{ secrets.DOCKER_USERNAME }}/voting:latest
+
   deploy-to-render:
     runs-on: ubuntu-latest # Define the operating system for the job
-    needs: run-tests
-    if: ${{ needs.run-tests.result == 'success' }} 
+    needs: [run-tests, push-to-docker-hub]
+    if: ${{ needs.run-unit-tests.result == 'success' }} 
     steps:
       - name: Trigger Render deployment webhook #trigger deployment webhook
         run: curl -X GET -d '{}' ${{ secrets.RENDER_DEPLOY_HOOK }}
